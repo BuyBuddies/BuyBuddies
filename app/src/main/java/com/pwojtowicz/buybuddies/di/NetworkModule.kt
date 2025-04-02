@@ -1,7 +1,6 @@
 package com.pwojtowicz.buybuddies.di
 
 import android.content.Context
-import androidx.compose.ui.res.stringResource
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -10,6 +9,7 @@ import com.pwojtowicz.buybuddies.auth.TokenInterceptor
 import com.pwojtowicz.buybuddies.data.api.AuthApiService
 import com.pwojtowicz.buybuddies.data.api.GroceryListApiService
 import com.pwojtowicz.buybuddies.data.api.GroceryListItemApiService
+import com.pwojtowicz.buybuddies.data.network.NetworkConnectivityManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,6 +29,14 @@ object NetworkModule {
     @Singleton
     fun provideBaseUrl(@ApplicationContext context: Context): String {
         return context.getString(R.string.shiro_backend_ip)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkConnectivityManager(
+        @ApplicationContext context: Context
+    ): NetworkConnectivityManager {
+        return NetworkConnectivityManager(context)
     }
 
     @Provides
