@@ -8,15 +8,22 @@ import okhttp3.Response
 import javax.inject.Inject
 
 class TokenInterceptor @Inject constructor(
-    private val authClient: AuthorizationClient
+    private val authClient: AuthorizationClient,
+    private val guestModeManager: GuestModeManager
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest  = chain.request()
 
+        // For guest user proceed without adding auth token
+        if (guestModeManager.isGuestMode()) {
+            Log.d(TAG, "User in guest mode, proceeding without token")
+            return chain.proceed(originalRequest)
+        }
+
         var response = makeRequestWithToken(chain, originalRequest)
 
         if (response.code == 401) {
-            Log.d("TokenInterceptor", "Got 401, refreshing token and retrying")
+            Log.d(TAG, "Got 401, refreshing token and retrying")
             response.close()
             response = makeRequestWithToken(chain, originalRequest, forceRefresh = true)
         }
@@ -30,13 +37,26 @@ class TokenInterceptor @Inject constructor(
         forceRefresh: Boolean = false
     ): Response {
         val token = runBlocking {
-            authClient.getIdToken(forceRefresh) ?: throw Exception("Failed to get token")
+            try {
+                authClient.getIdToken(forceRefresh) ?: throw Exception("Failed to get token")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to get token", e)
+                null
+            }
         }
 
-        val newRequest = originalRequest.newBuilder()
-            .header("Authorization", "Bearer $token")
-            .build()
+        val newRequest = if (token != null) {
+            originalRequest.newBuilder()
+                .header("Authorization", "Bearer $token")
+                .build()
+        } else {
+            originalRequest
+        }
 
         return chain.proceed(newRequest)
+    }
+
+    companion object {
+        private const val TAG = "TokenInterceptor"
     }
 }
