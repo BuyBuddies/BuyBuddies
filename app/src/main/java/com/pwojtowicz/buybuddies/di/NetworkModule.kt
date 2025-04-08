@@ -5,6 +5,7 @@ import com.pwojtowicz.buybuddies.auth.AuthorizationClient
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.pwojtowicz.buybuddies.R
+import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.auth.TokenInterceptor
 import com.pwojtowicz.buybuddies.data.api.AuthApiService
 import com.pwojtowicz.buybuddies.data.api.GroceryListApiService
@@ -48,8 +49,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideTokenInterceptor(
-        authClient: AuthorizationClient
-    ): TokenInterceptor = TokenInterceptor(authClient)
+        authClient: AuthorizationClient,
+        guestModeManager: GuestModeManager
+    ): TokenInterceptor = TokenInterceptor(
+        authClient = authClient,
+        guestModeManager = guestModeManager
+    )
 
     @Provides
     @Singleton

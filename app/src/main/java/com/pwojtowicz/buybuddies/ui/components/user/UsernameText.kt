@@ -1,11 +1,7 @@
 package com.pwojtowicz.buybuddies.ui.components.user
 
-import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -25,22 +21,25 @@ fun UsernameText(
     textColor: Color = bb_theme_text_clr_light,
     authViewModel: AuthViewModel = hiltViewModel()
 ){
-    val currentUser by authViewModel.currentUser.collectAsState()
-    val displayName = currentUser?.email?.let { email ->
-        val truncatedEmail = email.takeWhile { char ->
-            char != '@' && char != '.' && char != '_'
-        }
-        truncatedEmail.take(10)
-    } ?: ""
+//TODO: change the user name shown to being send in as argument
 
-    LaunchedEffect(Unit) {
-        Log.d("UsernameText", "Raw email: ${currentUser?.email}")
-        Log.d("UsernameText", "Raw user: $currentUser")
-    }
+//    val currentUser by authViewModel.currentUser.collectAsState()
+//    val displayName = currentUser?.email?.let { email ->
+//        val truncatedEmail = email.takeWhile { char ->
+//            char != '@' && char != '.' && char != '_'
+//        }
+//        truncatedEmail.take(10)
+//    } ?: ""
+//
+//    LaunchedEffect(Unit) {
+//        Log.d("UsernameText", "Raw email: ${currentUser?.email}")
+//        Log.d("UsernameText", "Raw user: $currentUser")
+//    }
 
     val rampartOneFamily = FontFamily(Font(R.font.rampart_one_regular))
     Text(
-        text = displayName.toString(),
+//        text = displayName.toString(),
+        text = name,
         style = TextStyle(
             fontFamily = rampartOneFamily,
             fontSize = fontSize,

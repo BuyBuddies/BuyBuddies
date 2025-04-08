@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
+import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.auth.SignInResult
 import com.pwojtowicz.buybuddies.auth.SignInState
 import com.pwojtowicz.buybuddies.auth.UserData
@@ -36,6 +37,7 @@ class AuthViewModel @Inject constructor(
     private val authClient: AuthorizationClient,
     private val preferencesManager: PreferencesManager,
     private val installManager: InstallManager,
+    private val guestModeManager: GuestModeManager,
     private val userRepository: UserRepository,
     private val groceryListRepository: GroceryListRepository,
     private val messageHandler: MessageHandler,
@@ -52,8 +54,15 @@ class AuthViewModel @Inject constructor(
         _currentUser.value = authClient.getSignedInUser()
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
+            // check if logged in before
             checkIfSignedIn()
-            _state.update { it.copy(isLoading = false) }
+
+            // check for guest mode on startup
+            val isGuestMode = guestModeManager.isGuestMode()
+            _state.update { it.copy(
+                isLoading = false,
+                isGuestMode = isGuestMode
+            )}
         }
     }
 
@@ -137,6 +146,11 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             setLoading(true)
             try {
+                // Clear guest mode when user signed in
+                if(result.data != null) {
+                    guestModeManager.clearGuestMode()
+                }
+
                 processSignIn(result)
             } catch (e: Exception) {
                 handleError(e)
@@ -262,16 +276,36 @@ class AuthViewModel @Inject constructor(
         _state.update { it.copy(isLoading = isLoading) }
     }
 
+    fun clearError() {
+        _state.update { it.copy(signInError = null) }
+    }
+
+    fun setGuestMode(isGuest: Boolean) {
+        guestModeManager.setGuestMode(isGuest = isGuest)
+
+        _state.update { it.copy(isGuestMode = isGuest) }
+
+        Log.d(TAG, "Guest mode set to: $isGuest")
+    }
+
+    fun saveGuestModeToPreferences() {
+        val isGuest = state.value.isGuestMode
+        guestModeManager.setGuestMode(isGuest)
+        Log.d(TAG, "Saved guest mode to preferences: $isGuest")
+    }
+
     fun resetState() {
         val currentUser = authClient.getSignedInUser()
         val isFirstInstall = preferencesManager.isFirstInstall
+        val isGuestMode = guestModeManager.isGuestMode()
 
         _state.update {
             SignInState(
                 isSignInSuccessful = false,
                 isLoading = false,
                 isSignedIn = currentUser != null && !isFirstInstall,
-                signInError = null
+                signInError = null,
+                isGuestMode = isGuestMode
             )
         }
     }
@@ -283,10 +317,6 @@ class AuthViewModel @Inject constructor(
                 signInError = null
             )
         }
-    }
-
-    fun clearError() {
-        _state.update { it.copy(signInError = null) }
     }
 
     companion object {
