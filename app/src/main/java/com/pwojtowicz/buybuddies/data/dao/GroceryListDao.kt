@@ -55,7 +55,7 @@ interface GroceryListDao {
     suspend fun homeExists(homeId: Long): Int
 
     @Query("SELECT COUNT(*) FROM users WHERE firebaseUid = :uid")
-    suspend fun userExists(uid: String): Int
+    suspend fun userExists(uid: String): Boolean
 
     @Update
     suspend fun update(groceryList: GroceryList)

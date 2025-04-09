@@ -52,7 +52,7 @@ fun GroceryListScreen(
     val hasUnsavedChanges by viewModel.hasUnsavedChanges
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
 
-    val currentUser by authViewModel.currentUser.collectAsState()
+    val currentUser = authViewModel.getCurrentUser()
 
     val completedItems = groceryItemsList.filter { it.listId == groceryListId && it.purchaseStatus.toBoolean() }
     val activeItems = groceryItemsList.filter { it.listId == groceryListId && !it.purchaseStatus.toBoolean() }

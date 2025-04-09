@@ -1,6 +1,7 @@
 package com.pwojtowicz.buybuddies.di
 
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
+import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.data.api.AuthApiService
 import com.pwojtowicz.buybuddies.data.api.GroceryListApiService
 import com.pwojtowicz.buybuddies.data.api.GroceryListItemApiService
@@ -12,6 +13,7 @@ import com.pwojtowicz.buybuddies.data.dao.UserDao
 import com.pwojtowicz.buybuddies.data.repository.GroceryListItemRepository
 import com.pwojtowicz.buybuddies.data.repository.GroceryListRepository
 import com.pwojtowicz.buybuddies.data.repository.HomeRepository
+import com.pwojtowicz.buybuddies.data.repository.LocalIdManager
 import com.pwojtowicz.buybuddies.data.repository.UserRepository
 import dagger.Module
 import dagger.Provides
@@ -47,11 +49,15 @@ object RepositoryModule {
     fun provideGroceryListRepository(
         authClient: AuthorizationClient,
         groceryListApiService: GroceryListApiService,
-        groceryListDao: GroceryListDao
+        groceryListDao: GroceryListDao,
+        guestModeManager: GuestModeManager,
+        localIdManager: LocalIdManager
     ): GroceryListRepository = GroceryListRepository(
         authClient,
         groceryListApiService,
-        groceryListDao
+        groceryListDao,
+        guestModeManager,
+        localIdManager
     )
 
     @Provides

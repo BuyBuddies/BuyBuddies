@@ -50,7 +50,7 @@ fun HomeScreen(
     val filteredGroceryLists by viewModel.filteredGroceryLists.collectAsState()
     val groceryListLabels by viewModel.groceryListLabels.collectAsState()
 
-    val currentUser by authViewModel.currentUser.collectAsState()
+    val currentUser = authViewModel.getCurrentUser()
 
 //    val localFocusManager = LocalFocusManager.current
 

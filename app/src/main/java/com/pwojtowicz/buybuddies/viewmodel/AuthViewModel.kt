@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
 import com.pwojtowicz.buybuddies.auth.GuestModeManager
+import com.pwojtowicz.buybuddies.auth.MigrationStatus
 import com.pwojtowicz.buybuddies.auth.SignInResult
 import com.pwojtowicz.buybuddies.auth.SignInState
 import com.pwojtowicz.buybuddies.auth.UserData
@@ -14,6 +15,7 @@ import com.pwojtowicz.buybuddies.data.api.AuthApiService
 import com.pwojtowicz.buybuddies.data.dto.UserDTO
 import com.pwojtowicz.buybuddies.data.entity.User
 import com.pwojtowicz.buybuddies.data.network.sync.DataSyncManager
+import com.pwojtowicz.buybuddies.data.network.sync.GuestDataMigrationService
 import com.pwojtowicz.buybuddies.data.prefernces.PreferencesManager
 import com.pwojtowicz.buybuddies.data.repository.GroceryListRepository
 import com.pwojtowicz.buybuddies.data.repository.UserRepository
@@ -38,37 +40,41 @@ class AuthViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val installManager: InstallManager,
     private val guestModeManager: GuestModeManager,
+    private val guestDataMigrationService: GuestDataMigrationService,
     private val userRepository: UserRepository,
     private val groceryListRepository: GroceryListRepository,
     private val messageHandler: MessageHandler,
     private val authApiService: AuthApiService,
     private val dataSyncManager: DataSyncManager
 ) : ViewModel() {
-    private val _state = MutableStateFlow(SignInState())
-    val state = _state.asStateFlow()
+    private var _state = MutableStateFlow(SignInState())
+    var state = _state.asStateFlow()
 
-    private val _currentUser = MutableStateFlow<UserData?>(null)
-    val currentUser = _currentUser.asStateFlow()
+//    private val _currentUser = MutableStateFlow<UserData?>(null)
+//    val currentUser = _currentUser.asStateFlow()
 
     init {
-        _currentUser.value = authClient.getSignedInUser()
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            // check if logged in before
-            checkIfSignedIn()
+//        _currentUser.value = authClient.getSignedInUser()
+        val currentUser = authClient.getSignedInUser()
+        val isGuestMode = guestModeManager.isGuestMode()
 
-            // check for guest mode on startup
-            val isGuestMode = guestModeManager.isGuestMode()
-            _state.update { it.copy(
+        _state.update { it.copy(isLoading = true) }
+        checkIfSignedIn()
+        _state.update {
+            it.copy(
                 isLoading = false,
-                isGuestMode = isGuestMode
-            )}
+                isGuestMode = isGuestMode,
+                isSignedIn = currentUser != null && !isGuestMode,
+                user = currentUser
+            )
         }
+
+        Log.d(TAG, "Auth state initialized: user=${currentUser?.firebaseUid}, guestMode=$isGuestMode")
     }
 
     fun getCurrentUser(): UserData? {
         val user = authClient.getSignedInUser()
-        _currentUser.value = user
+        _state.update { it.copy(user = user) }
         return user
     }
 
@@ -79,6 +85,81 @@ class AuthViewModel @Inject constructor(
     suspend fun signIn(): IntentSender? {
         return authClient.signIn()
     }
+
+    /**
+     * Handles sign-in with migration for guest users
+     * @param intent The intent from Google sign-in
+     * @return Result of the sign-in process
+     */
+    suspend fun signInWithMigration(intent: Intent): SignInResult {
+        _state.update { it.copy(isLoading = true, migrationStatus = MigrationStatus.IN_PROGRESS) }
+
+        try {
+            // First, perform the standard sign-in
+            val signInResult = authClient.signInWithIntent(intent)
+
+            // If sign-in was successful, migrate the guest data
+            if (signInResult.data != null) {
+                try {
+                    Log.d(TAG, "Beginning migration for user: ${signInResult.data.firebaseUid}")
+
+                    guestDataMigrationService.migrateGuestData(signInResult.data.firebaseUid)
+
+                    // Clear guest mode after successful migration
+                    guestModeManager.clearGuestMode()
+
+                    // Update state to reflect successful migration
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isGuestMode = false,
+                            migrationStatus = MigrationStatus.COMPLETED
+                        )
+                    }
+
+                    Log.d(TAG, "Migration completed successfully")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Migration failed", e)
+
+                    // Update state to reflect failed migration but successful sign-in
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            migrationStatus = MigrationStatus.FAILED,
+                            migrationError = e.message ?: "Failed to migrate guest data"
+                        )
+                    }
+                }
+            } else {
+                // Sign-in failed
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        migrationStatus = MigrationStatus.NONE
+                    )
+                }
+            }
+
+            return signInResult
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during sign-in with migration", e)
+
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    migrationStatus = MigrationStatus.FAILED,
+                    migrationError = e.message ?: "An unexpected error occurred"
+                )
+            }
+
+            return SignInResult(
+                data = null,
+                errorMessage = e.message ?: "An unexpected error occurred",
+                isNewUser = false
+            )
+        }
+    }
+
 
     private fun checkIfSignedIn() {
         val currentUser = authClient.getSignedInUser()
@@ -286,17 +367,13 @@ class AuthViewModel @Inject constructor(
     }
 
     fun setGuestMode(isGuest: Boolean) {
-        guestModeManager.setGuestMode(isGuest = isGuest)
+        viewModelScope.launch {
+            guestModeManager.setGuestMode(isGuest = isGuest)
 
-        _state.update { it.copy(isGuestMode = isGuest) }
+            _state.update { it.copy(isGuestMode = isGuest) }
 
-        Log.d(TAG, "Guest mode set to: $isGuest")
-    }
-
-    fun saveGuestModeToPreferences() {
-        val isGuest = state.value.isGuestMode
-        guestModeManager.setGuestMode(isGuest)
-        Log.d(TAG, "Saved guest mode to preferences: $isGuest")
+            Log.d(TAG, "Guest mode set to: $isGuest")
+        }
     }
 
     fun resetState() {

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
+import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.data.entity.GroceryList
 import com.pwojtowicz.buybuddies.data.entity.GroceryListLabel
 import com.pwojtowicz.buybuddies.data.entity.GroceryListStatus
@@ -29,6 +30,7 @@ class HomeViewModel @Inject constructor(
     private val groceryListRepository: GroceryListRepository,
     private val userRepository: UserRepository,
     private val homeRepository: HomeRepository,
+    private val guestModeManager: GuestModeManager
 ) : ViewModel() {
     // UI State
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -63,6 +65,8 @@ class HomeViewModel @Inject constructor(
         SharingStarted.WhileSubscribed(stopTimeoutMillis = 5000L),
         emptyList()
     )
+
+
 
     fun refreshGroceryLists() {
         viewModelScope.launch {
@@ -109,13 +113,24 @@ class HomeViewModel @Inject constructor(
     fun createGroceryList(name: String, description: String = "") {
         viewModelScope.launch {
             try {
-                val currentUser = authorizationClient.getSignedInUser()
-                    ?: throw IllegalStateException("No user signed in")
+                // First make sure guest user exists if in guest mode
+                val ownerId = if (guestModeManager.isGuestMode()) {
+                    try {
+                        guestModeManager.getGuestUserId()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to get guest user ID", e)
+                        throw IllegalStateException("Cannot create list without a valid user")
+                    }
+                } else {
+                    val currentUser = authorizationClient.getSignedInUser()
+                        ?: throw IllegalStateException("No user signed in")
+                    currentUser.firebaseUid
+                }
 
                 val newGroceryList = GroceryList(
                     name = name.trim(),
                     description = description.trim(),
-                    ownerId = currentUser.firebaseUid,
+                    ownerId = ownerId,
                     listStatus = GroceryListStatus.ACTIVE.name,
                     createdAt = System.currentTimeMillis().toString()
                 )
@@ -130,7 +145,7 @@ class HomeViewModel @Inject constructor(
                 val errorMessage = when (e) {
                     is IllegalStateException -> e.message ?: "Authentication error"
                     is IllegalArgumentException -> e.message ?: "Invalid input"
-                    else -> "Failed to create list"
+                    else -> "Failed to create list: ${e.message}"
                 }
                 updateUiState { it.copy(error = errorMessage) }
             }

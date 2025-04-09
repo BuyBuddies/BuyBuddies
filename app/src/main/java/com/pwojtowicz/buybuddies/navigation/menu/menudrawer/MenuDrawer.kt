@@ -37,7 +37,7 @@ fun MenuDrawer(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    val currentUser by authViewModel.currentUser.collectAsState()
+    val currentUser = authViewModel.getCurrentUser()
 
     Surface(
         modifier = Modifier

@@ -15,8 +15,14 @@ interface UserDao {
     @Query("SELECT * FROM users")
     fun getAll(): Flow<List<User>>
 
+//    @Query("SELECT * FROM users WHERE firebaseUid = :firebaseUid")
+//    fun getByFirebaseUid(firebaseUid: String): User
+
     @Query("SELECT * FROM users WHERE firebaseUid = :firebaseUid")
-    fun getByFirebaseUid(firebaseUid: String): User
+    suspend fun getUserByFirebaseUid(firebaseUid: String): User?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE firebaseUid = :firebaseUid)")
+    suspend fun userExists(firebaseUid: String): Boolean
 
     @Query("SELECT * FROM users WHERE id = :id")
     fun getById(id: Long): Flow<User>
