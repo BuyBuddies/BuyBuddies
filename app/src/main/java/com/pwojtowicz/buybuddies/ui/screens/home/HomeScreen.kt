@@ -22,7 +22,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -31,12 +30,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.pwojtowicz.buybuddies.navigation.NavItems
+import com.pwojtowicz.buybuddies.navigation.NavRoute
 import com.pwojtowicz.buybuddies.navigation.navigateToScreen
 import com.pwojtowicz.buybuddies.ui.screens.grocerylist.GroceryListMenuSheet
 import com.pwojtowicz.buybuddies.ui.screens.home.container.MainListContainer
-import com.pwojtowicz.buybuddies.viewmodel.GroceryViewModel
+import com.pwojtowicz.buybuddies.viewmodel.AuthViewModel
 import com.pwojtowicz.buybuddies.viewmodel.HomeViewModel
-import com.pwojtowicz.buybuddies.viewmodel.SharedListsViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -44,15 +43,16 @@ import kotlin.math.roundToInt
 fun HomeScreen(
     navController: NavHostController,
     paddingValues: PaddingValues,
-    groceryListViewModel: GroceryViewModel = hiltViewModel(),
     viewModel: HomeViewModel = hiltViewModel(),
-    sharedListsViewModel: SharedListsViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val filteredGroceryLists by viewModel.filteredGroceryLists.collectAsState()
     val groceryListLabels by viewModel.groceryListLabels.collectAsState()
 
-    val localFocusManager = LocalFocusManager.current
+    val currentUser by authViewModel.currentUser.collectAsState()
+
+//    val localFocusManager = LocalFocusManager.current
 
     val toolbarHeight = 100.dp
     val toolbarHeightPx = with(LocalDensity.current) { toolbarHeight.toPx() }
@@ -100,11 +100,19 @@ fun HomeScreen(
                 .height(toolbarHeight)
                 .offset { IntOffset(x = 0, y = toolbarOffsetHeightPx.roundToInt()) }
                 .fillMaxWidth(),
+            username = currentUser?.username ?: "Sign In",
             onProfileClick = {
-                navigateToScreen(
-                    navController = navController,
-                    route = NavItems.Profile.route
-                )
+                if(currentUser != null) {
+                    navigateToScreen(
+                        navController = navController,
+                        route = NavItems.Profile.route
+                    )
+                } else {
+                    authViewModel.signOut()
+                    navController.navigate(NavRoute.Auth.route) {
+                        popUpTo(NavRoute.Main.route) { inclusive = true }
+                    }
+                }
             }
         )
         MainListContainer(

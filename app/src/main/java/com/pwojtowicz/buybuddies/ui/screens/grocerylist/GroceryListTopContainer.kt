@@ -36,13 +36,11 @@ import com.pwojtowicz.buybuddies.ui.screens.grocerylist.menu.DeleteConfirmationD
 import com.pwojtowicz.buybuddies.ui.screens.grocerylist.menu.EditListNameDialog
 import com.pwojtowicz.buybuddies.ui.screens.grocerylist.menu.ListOptionsMenu
 import com.pwojtowicz.buybuddies.ui.screens.grocerylist.menu.MemberManagementDialog
-//import com.pwojtowicz.buybuddies.ui.screens.grocerylist.menu.SaveButton
 
 @Composable
 fun GroceryListTopContainer(
     listName: String,
-    hasUnsavedChanges: Boolean,
-    onSaveClick: () -> Unit,
+    username: String,
     onProfileClick: () -> Unit,
     onDeleteList: () -> Unit,
     onUpdateListName: (String) -> Unit,
@@ -58,13 +56,15 @@ fun GroceryListTopContainer(
             .padding(0.dp, 10.dp, 0.dp, 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        SideUserProfile(height = height, onProfileClick)
+        SideUserProfile(
+            height = height,
+            username,
+            onProfileClick
+        )
         Spacer(modifier = Modifier.weight(1f))
         ListNameBox(
             listName = listName,
             height = height,
-            hasUnsavedChanges = hasUnsavedChanges,
-            onSaveClick = onSaveClick,
             onDeleteList = onDeleteList,
             onUpdateListName = onUpdateListName,
             onAddMember = onAddMember,
@@ -79,8 +79,6 @@ fun GroceryListTopContainer(
 private fun ListNameBox(
     listName: String,
     height: Dp,
-    hasUnsavedChanges: Boolean,
-    onSaveClick: () -> Unit,
     onDeleteList: () -> Unit,
     onUpdateListName: (String) -> Unit,
     onAddMember: (String) -> Unit,
@@ -99,9 +97,6 @@ private fun ListNameBox(
     ) {
         ListNameDisplay(listName = listName, height = height)
 
-//        if (hasUnsavedChanges) {
-//            SaveButton(onSaveClick = onSaveClick)
-//        }
 
         ListOptionsMenu(
             showMenu = showMenu,
@@ -154,8 +149,8 @@ private fun ListNameDisplay(listName: String, height: Dp) {
 
     Box(
         modifier = Modifier
-            .height(height).
-            widthIn(max = 200.dp),
+            .height(height)
+            .widthIn(max = 200.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -214,5 +209,14 @@ fun UnsavedChangesDialog(
 @Preview
 @Composable
 fun GroceryListTopContainerPreview(){
-    GroceryListTopContainer("List Name", true, {}, {}, {}, {}, {}, {}, listOf(""))
+    GroceryListTopContainer(
+        "List Name",
+        "testUser",
+        {},
+        {},
+        {},
+        {},
+        {},
+        listOf("")
+    )
 }

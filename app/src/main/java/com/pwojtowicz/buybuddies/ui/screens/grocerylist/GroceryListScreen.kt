@@ -30,8 +30,10 @@ import com.pwojtowicz.buybuddies.data.enums.MeasurementUnit
 import com.pwojtowicz.buybuddies.data.enums.PurchaseStatus
 import com.pwojtowicz.buybuddies.ui.components.ContainerCard
 import com.pwojtowicz.buybuddies.navigation.NavItems
+import com.pwojtowicz.buybuddies.navigation.NavRoute
 import com.pwojtowicz.buybuddies.navigation.navigateToScreen
 import com.pwojtowicz.buybuddies.ui.screens.grocerylist.groceryitem.GroceryItemRow
+import com.pwojtowicz.buybuddies.viewmodel.AuthViewModel
 import com.pwojtowicz.buybuddies.viewmodel.GroceryViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -40,7 +42,8 @@ fun GroceryListScreen(
     groceryListId: Long,
     navController: NavHostController,
     paddingValues: PaddingValues,
-    viewModel: GroceryViewModel = hiltViewModel()
+    viewModel: GroceryViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val groceryItemsList by viewModel.groceryListItems.collectAsState()
     val groceryListName by viewModel.groceryListName.collectAsState()
@@ -48,6 +51,8 @@ fun GroceryListScreen(
     val showAddGroceryItem = remember { MutableStateFlow(false) }
     val hasUnsavedChanges by viewModel.hasUnsavedChanges
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+
+    val currentUser by authViewModel.currentUser.collectAsState()
 
     val completedItems = groceryItemsList.filter { it.listId == groceryListId && it.purchaseStatus.toBoolean() }
     val activeItems = groceryItemsList.filter { it.listId == groceryListId && !it.purchaseStatus.toBoolean() }
@@ -99,17 +104,22 @@ fun GroceryListScreen(
             )
         }
 
-
         Column {
             GroceryListTopContainer(
                 listName = groceryListName,
-                hasUnsavedChanges = hasUnsavedChanges,
-                onSaveClick = { viewModel.saveChanges() },
+                username = currentUser?.username ?: "Sign In",
                 onProfileClick = {
-                    navigateToScreen(
-                        navController = navController,
-                        route = NavItems.Profile.route
-                    )
+                    if(currentUser != null) {
+                        navigateToScreen(
+                            navController = navController,
+                            route = NavItems.Profile.route
+                        )
+                    } else {
+                        authViewModel.signOut()
+                        navController.navigate(NavRoute.Auth.route) {
+                            popUpTo(NavRoute.Main.route) { inclusive = true }
+                        }
+                    }
                 },
                 onDeleteList = {
                     viewModel.deleteList(groceryListId)
