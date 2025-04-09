@@ -250,7 +250,7 @@ fun AuthContent(
 @Composable
 private fun MainContent(
     navController: NavHostController,
-    content: @Composable (PaddingValues) -> Unit
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

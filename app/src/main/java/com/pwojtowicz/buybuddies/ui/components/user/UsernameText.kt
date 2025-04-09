@@ -9,17 +9,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.pwojtowicz.buybuddies.R
 import com.pwojtowicz.buybuddies.ui.theme.bb_theme_text_clr_light
-import com.pwojtowicz.buybuddies.viewmodel.AuthViewModel
 
 @Composable
 fun UsernameText(
-    name: String = "Username",
+    username: String,
     fontSize: TextUnit = 16.sp,
-    textColor: Color = bb_theme_text_clr_light,
-    authViewModel: AuthViewModel = hiltViewModel()
+    textColor: Color = bb_theme_text_clr_light
 ){
 //TODO: change the user name shown to being send in as argument
 
@@ -30,16 +27,10 @@ fun UsernameText(
 //        }
 //        truncatedEmail.take(10)
 //    } ?: ""
-//
-//    LaunchedEffect(Unit) {
-//        Log.d("UsernameText", "Raw email: ${currentUser?.email}")
-//        Log.d("UsernameText", "Raw user: $currentUser")
-//    }
 
     val rampartOneFamily = FontFamily(Font(R.font.rampart_one_regular))
     Text(
-//        text = displayName.toString(),
-        text = name,
+        text = username,
         style = TextStyle(
             fontFamily = rampartOneFamily,
             fontSize = fontSize,
@@ -50,5 +41,5 @@ fun UsernameText(
 @Preview
 @Composable
 fun UsernameTextPreview() {
-    UsernameText()
+    UsernameText(username = "Username")
 }

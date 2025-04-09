@@ -234,8 +234,13 @@ class AuthViewModel @Inject constructor(
     fun signOut() {
         viewModelScope.launch {
             try {
-                authClient.signOut()
-                dataSyncManager.cancelSync()
+                if(state.value.isGuestMode) {
+                    guestModeManager.clearGuestMode()
+                    Log.d(TAG, "Guest user signed out")
+                } else {
+                    authClient.signOut()
+                    dataSyncManager.cancelSync()
+                }
                 resetState()
             } catch (e: Exception) {
                 _state.update {

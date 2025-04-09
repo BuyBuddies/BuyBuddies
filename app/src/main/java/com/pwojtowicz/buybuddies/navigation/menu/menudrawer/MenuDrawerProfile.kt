@@ -40,7 +40,8 @@ import com.pwojtowicz.buybuddies.ui.theme.bb_theme_text_clr_light
 @Composable
 fun MenuDrawerProfile(
     onNavToProfile: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    username: String,
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -58,7 +59,11 @@ fun MenuDrawerProfile(
             ) {
                 ProfilePicture(height = 40.dp, width = 40.dp)
                 Spacer(modifier = Modifier.width(10.dp))
-                UsernameText(fontSize = 20.sp, textColor = bb_theme_text_clr_light)
+                UsernameText(
+                    fontSize = 20.sp,
+                    username = username,
+                    textColor = bb_theme_text_clr_light
+                )
             }
 
             Icon(
@@ -92,7 +97,11 @@ fun MenuDrawerProfile(
 @Composable
 fun MenuDrawerProfilePreview() {
     Box(){
-        MenuDrawerProfile(onNavToProfile = {}, onLogout = {})
+        MenuDrawerProfile(
+            onNavToProfile = {},
+            username = "testName",
+            onLogout = {}
+        )
     }
 }
 
