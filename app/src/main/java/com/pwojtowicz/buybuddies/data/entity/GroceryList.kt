@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.pwojtowicz.buybuddies.data.enums.GroceryListStatus
 
 @Entity(
     tableName = "grocery_lists",
@@ -41,9 +42,3 @@ data class GroceryList(
     override val createdAt: String = "",
     override val syncedAt: Long = System.currentTimeMillis()
 ) : BaseEntity
-
-enum class GroceryListStatus {
-    ACTIVE,
-    DROPPED,
-    DONE
-}

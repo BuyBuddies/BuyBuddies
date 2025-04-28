@@ -89,4 +89,7 @@ interface GroceryListDao {
 
     @Query("UPDATE grocery_lists SET name = :newName WHERE id = :listId")
     suspend fun updateListName(listId: Long, newName: String)
+
+    @Query("UPDATE grocery_lists SET listStatus = :status WHERE id = :groceryListId")
+    suspend fun changeStatus(groceryListId: Long, status: String)
 }

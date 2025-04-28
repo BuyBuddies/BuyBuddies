@@ -7,6 +7,7 @@ import com.pwojtowicz.buybuddies.data.api.GroceryListApiService
 import com.pwojtowicz.buybuddies.data.dao.GroceryListDao
 import com.pwojtowicz.buybuddies.data.dto.GroceryListDTO
 import com.pwojtowicz.buybuddies.data.entity.GroceryList
+import com.pwojtowicz.buybuddies.data.enums.GroceryListStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import retrofit2.HttpException
@@ -322,6 +323,15 @@ class GroceryListRepository @Inject constructor(
     suspend fun getListNameById(groceryListId: Long): String {
         return groceryListDao.getListNameById(groceryListId)
             ?: throw RuntimeException("Grocery list with ID $groceryListId not found")
+    }
+
+
+    /**
+     * Allows for status change of GroceryList entity
+     * takes in GroceryListStatus enum as argument
+     */
+    suspend fun changeStatus(groceryListId: Long, status: GroceryListStatus) {
+        groceryListDao.changeStatus(groceryListId, status.name)
     }
 
     /**

@@ -24,8 +24,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.pwojtowicz.buybuddies.data.entity.GroceryList
-import com.pwojtowicz.buybuddies.data.entity.GroceryListStatus
+import com.pwojtowicz.buybuddies.data.enums.GroceryListStatus
 
+//TODO check this out maybe delete it
 @Composable
 fun GroceryListItem(
     groceryList: GroceryList,

@@ -167,12 +167,8 @@ fun HomeScreen(
         GroceryListMenuSheet(
             isVisible = uiState.showMenuSheet,
             onDismiss = { viewModel.setShowMenuSheetVisibility(false) },
-            onEdit = {},
-            onMarkAsDone = {},
-            onDelete = {
-                viewModel.deleteGroceryListById(uiState.longPressedListId)
-            },
-            onShare = {}
+            onMarkAsDone = { viewModel.markListAsDone(uiState.longPressedListId) },
+            onDelete = { viewModel.deleteGroceryListById(uiState.longPressedListId) }
         )
     }
 }

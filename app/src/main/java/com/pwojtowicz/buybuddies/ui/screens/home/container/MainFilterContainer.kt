@@ -15,7 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.pwojtowicz.buybuddies.data.entity.GroceryListLabel
-import com.pwojtowicz.buybuddies.data.entity.GroceryListStatus
+import com.pwojtowicz.buybuddies.data.enums.GroceryListStatus
 import com.pwojtowicz.buybuddies.ui.components.BBDropdownMenu
 import com.pwojtowicz.buybuddies.ui.components.SearchInputBar
 

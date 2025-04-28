@@ -13,10 +13,8 @@ import com.pwojtowicz.buybuddies.ui.theme.bb_theme_card_clr_light
 fun GroceryListMenuSheet(
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    onEdit: () -> Unit,
     onMarkAsDone: () -> Unit,
-    onDelete: () -> Unit,
-    onShare: () -> Unit
+    onDelete: () -> Unit
 ) {
     if (isVisible) {
         ModalBottomSheet(
@@ -30,14 +28,6 @@ fun GroceryListMenuSheet(
                     .padding(16.dp)
             ) {
                 MenuAction(
-                    text = "Edit Name",
-                    onClick = {
-                        onEdit()
-                        onDismiss()
-                    }
-                )
-
-                MenuAction(
                     text = "Mark as Done",
                     onClick = {
                         onMarkAsDone()
@@ -49,14 +39,6 @@ fun GroceryListMenuSheet(
                     text = "Delete",
                     onClick = {
                         onDelete()
-                        onDismiss()
-                    }
-                )
-
-                MenuAction(
-                    text = "Share",
-                    onClick = {
-                        onShare()
                         onDismiss()
                     }
                 )

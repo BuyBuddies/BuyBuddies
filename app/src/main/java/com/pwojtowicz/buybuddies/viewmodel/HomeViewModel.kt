@@ -7,7 +7,7 @@ import com.pwojtowicz.buybuddies.auth.AuthorizationClient
 import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.data.entity.GroceryList
 import com.pwojtowicz.buybuddies.data.entity.GroceryListLabel
-import com.pwojtowicz.buybuddies.data.entity.GroceryListStatus
+import com.pwojtowicz.buybuddies.data.enums.GroceryListStatus
 import com.pwojtowicz.buybuddies.data.repository.GroceryListItemRepository
 import com.pwojtowicz.buybuddies.data.repository.GroceryListRepository
 import com.pwojtowicz.buybuddies.data.repository.HomeRepository
@@ -71,7 +71,9 @@ class HomeViewModel @Inject constructor(
     fun refreshGroceryLists() {
         viewModelScope.launch {
             try {
-                groceryListRepository.fetchUserLists()
+                if (!guestModeManager.isGuestMode()) {
+                    groceryListRepository.fetchUserLists()
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error refreshing grocery lists", e)
             }
@@ -113,7 +115,7 @@ class HomeViewModel @Inject constructor(
     fun createGroceryList(name: String, description: String = "") {
         viewModelScope.launch {
             try {
-                // First make sure guest user exists if in guest mode
+                // make sure guest user exists if in guest mode
                 val ownerId = if (guestModeManager.isGuestMode()) {
                     try {
                         guestModeManager.getGuestUserId()
@@ -166,6 +168,15 @@ class HomeViewModel @Inject constructor(
                 }
                 updateUiState { it.copy(error = errorMessage) }
             }
+        }
+    }
+
+    fun markListAsDone(groceryListId: Long) {
+        viewModelScope.launch {
+            groceryListRepository.changeStatus(
+                groceryListId = groceryListId,
+                status = GroceryListStatus.DONE
+            )
         }
     }
 
