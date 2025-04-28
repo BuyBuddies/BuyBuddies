@@ -33,8 +33,11 @@ val bb_theme_text_on_primary = Color(0xFFFFFFFF)  // White text on primary color
 
 // Status colors
 val bb_theme_success = Color(0xFF2EA25E)         // Your accept green
+val bb_theme_success_outline = Color(0xFF258F51)         // Your accept green
 val bb_theme_error = Color(0xFFB93131)           // Your reject red
+val bb_theme_error_outline = Color(0xFFA62929)           // Your reject red
 val bb_theme_warning = Color(0xFFFFA726)         // Add warning color
+val bb_theme_warning_outline = Color(0xFFE39421)         // Add warning color
 val bb_theme_info = Color(0xFF2196F3)            // Add info color
 
 val bb_theme_card_clr_light = Color(0xFFF1F1F1)
