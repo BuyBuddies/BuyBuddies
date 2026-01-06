@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.flowlayout.FlowRow
@@ -50,13 +52,14 @@ fun AddGroceryItem(
     var itemQuantity by remember { mutableStateOf("") }
 
     var selectedUnit by remember { mutableStateOf(MeasurementUnit.PIECE) }
-    val unitOptions = MeasurementUnit.values()
+    val unitOptions = MeasurementUnit.entries.toTypedArray()
     var selectedUnitOption by remember { mutableStateOf(unitOptions[0]) }
 
     var isError by remember { mutableStateOf(false) }
 
     if (isCardVisible) {
         ModalBottomSheet(
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = bb_theme_card_clr_light,
             scrimColor = Color(0x33000000),
             onDismissRequest = {
@@ -67,11 +70,11 @@ fun AddGroceryItem(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.45f)
+                    .fillMaxHeight(0.7f)
                     .padding(
                         start = 32.dp,
                         end = 32.dp,
-                        bottom = 8.dp
+                        bottom = 32.dp
                     )
             ) {
                 Text(
@@ -84,13 +87,14 @@ fun AddGroceryItem(
                     )
                 )
                 LazyColumn(
-                    Modifier.weight(1.0f)
+                    Modifier
+                        .weight(1.0f)
                 ) {
                     item {
                         BBOutlinedTextField(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 8.dp),
+                                .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
                             value = itemName,
                             onValueChange = {
                                 itemName = it
@@ -103,8 +107,8 @@ fun AddGroceryItem(
                     item {
                         BBOutlinedTextField(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
+                                .fillMaxWidth(0.7f)
+                                .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
                             value = itemQuantity,
                             onValueChange = { itemQuantity = it },
                             isError = false,
@@ -126,7 +130,9 @@ fun AddGroceryItem(
                             FlowRow(
                                 mainAxisSpacing = 8.dp,
                                 crossAxisSpacing = 8.dp,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
                             ) {
                                 unitOptions.forEach { unit ->
                                     OutlinedButton(
@@ -190,4 +196,14 @@ fun AddGroceryItem(
             }
         }
     }
+}
+
+@Composable
+@Preview
+fun AddGroceryItemPreview(){
+    AddGroceryItem(
+        isVisible = MutableStateFlow(true),
+        onDismiss = {},
+        onAddItem = { _, _, _ -> }
+    )
 }

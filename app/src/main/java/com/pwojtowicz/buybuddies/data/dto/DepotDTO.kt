@@ -7,6 +7,4 @@ data class DepotDTO(
     val homeId: Long,
     override val updatedAt: Long,
     override val createdAt: String
-) : BaseDto {
-
-}
+) : BaseDto

@@ -51,7 +51,7 @@ fun MainFilterContainer(
                     selectedStatus = if (status == "None") null else GroceryListStatus.valueOf(status)
                     onStatusFilterChange(selectedStatus)
                 },
-                options = listOf("None") + GroceryListStatus.values().map { it.name },
+                options = listOf("None") + GroceryListStatus.entries.map { it.name },
                 label = "Status",
                 modifier = Modifier.weight(1f)
             )

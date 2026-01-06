@@ -50,32 +50,96 @@ class AuthViewModel @Inject constructor(
     private var _state = MutableStateFlow(SignInState())
     var state = _state.asStateFlow()
 
-//    private val _currentUser = MutableStateFlow<UserData?>(null)
-//    val currentUser = _currentUser.asStateFlow()
-
     init {
-//        _currentUser.value = authClient.getSignedInUser()
         val currentUser = authClient.getSignedInUser()
         val isGuestMode = guestModeManager.isGuestMode()
 
         _state.update { it.copy(isLoading = true) }
         checkIfSignedIn()
-        _state.update {
-            it.copy(
-                isLoading = false,
-                isGuestMode = isGuestMode,
-                isSignedIn = currentUser != null && !isGuestMode,
-                user = currentUser
-            )
+
+        viewModelScope.launch {
+            performInitialAuthChecks()
         }
+//        _state.update {
+//            it.copy(
+//                isLoading = false,
+//                isGuestMode = isGuestMode,
+//                isSignedIn = currentUser != null && !isGuestMode,
+//                user = currentUser
+//            )
+//        }
 
         Log.d(TAG, "Auth state initialized: user=${currentUser?.firebaseUid}, guestMode=$isGuestMode")
+    }
+
+    private suspend fun performInitialAuthChecks() {
+        try {
+            val initialUser = authClient.getSignedInUser()
+            var finalIsSignedIn = initialUser != null
+            val finalIsGuestMode = guestModeManager.isGuestMode()
+            val isNewInstall = installManager.isNewInstall()
+
+            Log.d(
+                TAG, "Performing initial auth checks. InitialUser: " +
+                        "${initialUser?.firebaseUid}, " +
+                        "IsNewInstall: $isNewInstall, " +
+                        "IsGuestMode: $finalIsGuestMode"
+            )
+
+            // Scenario: New install, but a user session from a previous install exists.
+            // And the user is not currently in guest mode.
+            if (isNewInstall && initialUser != null && !finalIsGuestMode) {
+                Log.d(TAG, "New install with an existing signed-in user. Signing out.")
+                try {
+                    authClient.signOut()
+                    dataSyncManager.cancelSync()
+                    finalIsSignedIn = false
+                    Log.d(TAG, "Successfully signed out user on new install.")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error signing out user on new install", e)
+                    _state.update { it.copy(isSignedIn = false) }
+                    finalIsSignedIn = false
+                }
+            }
+
+            // If use is signed in (not guest mode, and not signed out to new install)
+            if (finalIsSignedIn && !finalIsGuestMode) {
+                dataSyncManager.setupPeriodicSync()
+            }
+
+            // FINAL state update after all initial checks are complete
+            _state.update { currentState ->
+                currentState.copy(
+                    isLoading = false, // ✅ Now loading is confirmed to be false
+                    isSignedIn = finalIsSignedIn && !finalIsGuestMode,
+                    isGuestMode = finalIsGuestMode,
+                    user = if (finalIsSignedIn && !finalIsGuestMode) initialUser else null,
+                    isSignInSuccessful = false // Initial check is not an "active" sign-in success
+                )
+            }
+            Log.d(TAG, "Initial auth checks complete. Final state: ${state.value}")
+        } catch(e: Exception) {
+            Log.e(TAG, "Critical error during initial auth checks", e)
+            _state.update { currentState ->
+                currentState.copy(
+                    isLoading = false,
+                    isSignedIn = false,
+                    isGuestMode = guestModeManager.isGuestMode(), // Re-check or use a sensible default
+                    signInError = "Initialization error: ${e.message}",
+                    user = null
+                )
+            }
+        }
     }
 
     fun getCurrentUser(): UserData? {
         val user = authClient.getSignedInUser()
         _state.update { it.copy(user = user) }
         return user
+    }
+
+    fun isGuestMode(): Boolean {
+        return _state.value.isGuestMode
     }
 
     suspend fun signInWithIntent(intent: Intent): SignInResult {
@@ -387,9 +451,12 @@ class AuthViewModel @Inject constructor(
                 isLoading = false,
                 isSignedIn = currentUser != null && !isFirstInstall,
                 signInError = null,
-                isGuestMode = isGuestMode
+                isGuestMode = isGuestMode,
+                migrationStatus = MigrationStatus.NONE,
+                migrationError = null
             )
         }
+        Log.d(TAG, "State reset. New state: ${state.value}")
     }
 
     fun resetLoadingState() {

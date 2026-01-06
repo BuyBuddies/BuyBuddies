@@ -66,11 +66,15 @@ object RepositoryModule {
         groceryListDao: GroceryListDao,
         groceryListItemDao: GroceryListItemDao,
         groceryListLabelDao: GroceryListLabelDao,
+        guestModeManager: GuestModeManager,
+        localIdManager: LocalIdManager,
         groceryListItemApiService: GroceryListItemApiService
     ): GroceryListItemRepository = GroceryListItemRepository(
         groceryListDao,
         groceryListItemDao,
         groceryListLabelDao,
+        guestModeManager,
+        localIdManager,
         groceryListItemApiService
     )
 }

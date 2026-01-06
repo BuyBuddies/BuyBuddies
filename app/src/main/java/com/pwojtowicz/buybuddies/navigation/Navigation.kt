@@ -48,19 +48,30 @@ import com.pwojtowicz.buybuddies.viewmodel.AuthViewModel
 import com.pwojtowicz.buybuddies.viewmodel.ConnectivityViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Root composable for the application's navigation.
+ * It observes authentication and connectivity states to determine the appropriate
+ * navigation graph (Auth or Main) and displays relevant UI like loading indicators
+ * or connectivity banners.
+ *
+ * @param navController The [NavHostController] used to manage navigation.
+ */
 @Composable
 fun Navigation(
     navController: NavHostController = rememberNavController()
 ) {
     val authViewModel: AuthViewModel = hiltViewModel()
     val connectivityViewModel: ConnectivityViewModel = hiltViewModel()
+
     val signInState by authViewModel.state.collectAsStateWithLifecycle()
     val isConnected by connectivityViewModel.isConnected.collectAsState()
 
+    // Log initial authentication state for easier debugging during development.
     LaunchedEffect(Unit) {
-        Log.d("Navigation", "SignInState: isSignedIn=${signInState.isSignedIn}, isLoading=${signInState.isLoading}")
+        Log.d("Navigation", "Initial SignInState: isSignedIn=${signInState.isSignedIn}, isLoading=${signInState.isLoading}")
     }
 
+    // Display a loading indicator while checking the current authentication status.
     if (signInState.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -73,6 +84,7 @@ fun Navigation(
 
         NavHost(
             navController = navController,
+            // Start with authentication flow or main app content based on sign-in status.
             startDestination = if(signInState.isSignedIn) NavRoute.Main.route else NavRoute.Auth.route
         ) {
             authNavigation(navController)
@@ -81,6 +93,12 @@ fun Navigation(
     }
 }
 
+/**
+ * Defines the navigation graph for authentication-related screens.
+ * This includes Login, Registration, and Forgot Password flows.
+ *
+ * @param navController The [NavHostController] for navigating between auth screens.
+ */
 private fun NavGraphBuilder.authNavigation(
     navController: NavHostController
 ) {
@@ -89,15 +107,18 @@ private fun NavGraphBuilder.authNavigation(
         route = NavRoute.Auth.route
     ) {
         composable(NavItems.Login.route) {
-            AuthContent(
-                navController = navController
-            )
+            AuthContent(navController = navController)
         }
-        composable(NavItems.Register.route) { }
-        composable(NavItems.ForgotPassword.route) { }
+        composable(NavItems.Register.route) { /* TODO: Implement Register Screen */ }
+        composable(NavItems.ForgotPassword.route) { /* TODO: Implement Forgot Password Screen */ }
     }
 }
 
+/**
+ * Defines the navigation graph for the main application screens accessible after successful authentication.
+ *
+ * @param navController The [NavHostController] for navigating between main app screens.
+ */
 private fun NavGraphBuilder.mainNavigation(
     navController: NavHostController
 ) {
@@ -116,6 +137,7 @@ private fun NavGraphBuilder.mainNavigation(
             }
         }
 
+        // Route for displaying a specific grocery list, identified by its ID.
         composable("${NavItems.GroceryList.route}/{groceryListId}") { backStackEntry ->
             val groceryListId = backStackEntry.arguments?.getString("groceryListId") ?: ""
             MainContent(
@@ -141,45 +163,32 @@ private fun NavGraphBuilder.mainNavigation(
         }
 
         composable(NavItems.Settings.route) {
-            MainContent(
-                navController = navController
-            ) {
-                SettingsScreen()
-            }
+            MainContent(navController = navController) { SettingsScreen() }
         }
 
         composable(NavItems.Notification.route) {
-            MainContent(
-                navController = navController
-            ) {
-                NotificationScreen()
-            }
+            MainContent(navController = navController) { NotificationScreen() }
         }
 
         composable(NavItems.Scanner.route) {
-            MainContent(
-                navController = navController
-            ) {
-                ScannerScreen()
-            }
+            MainContent(navController = navController) { ScannerScreen() }
         }
         composable(NavItems.Depot.route) {
-            MainContent(
-                navController = navController
-            ) {
-                DepotsScreen()
-            }
+            MainContent(navController = navController) { DepotsScreen() }
         }
-        composable(NavItems.Home.route) {
-            MainContent(
-                navController = navController
-            ) {
-                HomesScreen()
-            }
+        composable(NavItems.Home.route) { // Consider renaming if this is distinct from the main NavItems.Main route
+            MainContent(navController = navController) { HomesScreen() }
         }
     }
 }
 
+/**
+ * Composable responsible for rendering the authentication UI (currently LoginScreen)
+ * and handling the sign-in process, including Google Sign-In and guest mode.
+ *
+ * @param navController The [NavHostController] to navigate upon successful authentication.
+ * @param authViewModel The [AuthViewModel] managing authentication state and logic.
+ */
 @Composable
 fun AuthContent(
     navController: NavHostController,
@@ -189,6 +198,7 @@ fun AuthContent(
     val signInState by authViewModel.state.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
 
+    // Activity result launcher for Google Sign-In intent.
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
         onResult = { result ->
@@ -198,29 +208,31 @@ fun AuthContent(
                     authViewModel.onSignInResult(signInResult)
                 }
             }
-            else{
+            else {
+                // Reset loading state if sign-in was cancelled or failed.
                 authViewModel.resetLoadingState()
             }
         }
     )
 
-    // Handle successful sign in
+    // Navigate to main app content upon successful sign-in.
     LaunchedEffect(key1 = signInState.isSignInSuccessful) {
         if(signInState.isSignInSuccessful){
             Toast.makeText(context, "Sign in successful", Toast.LENGTH_LONG).show()
             navController.navigate(NavRoute.Main.route){
-                popUpTo(NavRoute.Auth.route) { inclusive = true }
+                popUpTo(NavRoute.Auth.route) { inclusive = true } // Clear auth back stack
             }
-            authViewModel.resetState()
+            authViewModel.resetState() // Clean up auth state after navigation
         }
     }
 
-    // Handle guest mode
+    // Navigate to main app content if guest mode is enabled.
     LaunchedEffect(key1 = signInState.isGuestMode) {
         if (signInState.isGuestMode) {
             navController.navigate(NavRoute.Main.route){
-                popUpTo(NavRoute.Auth.route) { inclusive = true }
+                popUpTo(NavRoute.Auth.route) { inclusive = true } // Clear auth back stack
             }
+            // Note: authViewModel.resetState() might also be relevant here if guest mode should clear prior auth attempts.
         }
     }
 
@@ -228,12 +240,13 @@ fun AuthContent(
     LoginScreen(
         state = signInState,
         onSignInClick = {
-            authViewModel.startSignIn {
+            authViewModel.startSignIn { // Sets isLoading state
                 coroutineScope.launch {
+                    // Attempt to get the sign-in intent and launch it.
                     val signInIntentLauncher = authViewModel.signIn()
                     launcher.launch(
                         IntentSenderRequest.Builder(
-                            signInIntentLauncher ?: return@launch
+                            signInIntentLauncher ?: return@launch // Early return if intent is null
                         ).build()
                     )
                 }
@@ -247,6 +260,13 @@ fun AuthContent(
     )
 }
 
+/**
+ * A common layout wrapper for screens within the main application navigation graph.
+ * It provides a [ModalNavigationDrawer] and a [Scaffold] with a [BottomMenu].
+ *
+ * @param navController The [NavHostController] for navigation actions from the drawer or bottom menu.
+ * @param content The composable content of the specific screen to be displayed within this layout.
+ */
 @Composable
 private fun MainContent(
     navController: NavHostController,
@@ -279,6 +299,16 @@ private fun MainContent(
 }
 
 
+/**
+ * Navigates to the specified [route], optionally appending arguments.
+ * This function configures common navigation options like popping up to the start destination,
+ * ensuring a single top instance, and restoring state.
+ *
+ * @param navController The [NavHostController] to perform the navigation.
+ * @param route The base destination route string.
+ * @param args A map of arguments to append to the route. Values from this map are appended as path segments.
+ *             Example: `navigateToScreen(nav, "userProfile", mapOf("userId" to "123"))` navigates to `userProfile/123`.
+ */
 fun navigateToScreen(
     navController: NavHostController,
     route: String,
@@ -287,17 +317,24 @@ fun navigateToScreen(
     val argRoute = buildString {
         append(route)
         if (args.isNotEmpty()) {
-            args.forEach { (value) ->
+            // This implementation appends only the values of the arguments.
+            // For named arguments in routes like "profile/{userId}", ensure the `route` string
+            // itself contains the placeholders and `args` provide the values for replacement
+            // or construct the path more carefully here if keys are also part of the path.
+            args.forEach { (_, value) -> // Key is not used in current appending logic
                 append("/$value")
             }
         }
     }
 
     navController.navigate(argRoute) {
+        // Pop up to the start destination of the current navigation graph to avoid a deep back stack.
         popUpTo(navController.graph.findStartDestination().id) {
             saveState = true
         }
+        // Avoid multiple copies of the same destination when re-navigating.
         launchSingleTop = true
+        // Restore state when navigating back to this destination.
         restoreState = true
     }
 }

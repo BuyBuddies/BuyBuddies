@@ -101,7 +101,7 @@ fun GroceryListCard(
 )
 @Composable
 fun GroceryListCardPreview() {
-    val groceryList = GroceryList(name = "test", listStatus = GroceryListStatus.ACTIVE.name)
+    val groceryList = GroceryList(name = "test", listStatus = GroceryListStatus.DONE.name)
     GroceryListCard(
         Modifier,
         groceryList
