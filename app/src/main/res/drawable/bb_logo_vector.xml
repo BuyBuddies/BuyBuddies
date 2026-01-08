@@ -1,0 +1,112 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+
+
+    <group
+        android:name="logo_animation_group"
+        android:pivotX="144"
+        android:pivotY="144">
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M109 71h70.62c10.7 1.33 32.96 10.8 36.38 38"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M107 216h74"/>
+        <path
+            android:fillColor="#FF85AAA6"
+            android:pathData="M116 90A23 22 0 1 0 116 134 23 22 0 1 0 116 90z"/>
+        <path
+            android:fillColor="#FF85AAA6"
+            android:pathData="M169.5 90A21.5 22 0 1 0 169.5 134 21.5 22 0 1 0 169.5 90z"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M75 180L212 180"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M71 177c15.26-37.62 71.92-39.7 85 0"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M131 179c15.26-37.62 71.92-39.7 85 0"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M71.12 169c-2.1 29.1 23.22 47 35.88 47"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M78 195L207 195"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M71 172v-63.9c0.72-11.68 9.53-35.45 39-37.1"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M179 216c13.03-0.7 38.65-11.9 36.92-51"/>
+        <path
+            android:strokeColor="#FF85AAA6"
+            android:strokeWidth="10"
+            android:pathData="M216 108v64"/>
+    </group>
+
+    <group
+        android:name="logo_static_group"
+        android:pivotX="144"
+        android:pivotY="144">
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M109 71h70.62c10.7 1.33 32.96 10.8 36.38 38"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M107 216h74"/>
+        <path
+            android:fillColor="#FF009688"
+            android:pathData="M116 90A23 22 0 1 0 116 134 23 22 0 1 0 116 90z"/>
+        <path
+            android:fillColor="#FF009688"
+            android:pathData="M169.5 90A21.5 22 0 1 0 169.5 134 21.5 22 0 1 0 169.5 90z"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M75 180L212 180"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M71 177c15.26-37.62 71.92-39.7 85 0"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M131 179c15.26-37.62 71.92-39.7 85 0"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M71.12 169c-2.1 29.1 23.22 47 35.88 47"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M78 195L207 195"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M71 172v-63.9c0.72-11.68 9.53-35.45 39-37.1"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M179 216c13.03-0.7 38.65-11.9 36.92-51"/>
+        <path
+            android:strokeColor="#FF009688"
+            android:strokeWidth="10"
+            android:pathData="M216 108v64"/>
+    </group>
+
+</vector>
