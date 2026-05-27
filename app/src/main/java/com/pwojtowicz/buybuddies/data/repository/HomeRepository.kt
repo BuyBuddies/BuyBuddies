@@ -9,9 +9,9 @@ import javax.inject.Inject
 class HomeRepository @Inject constructor(
     private val homeDao: HomeDao
 ) {
-    suspend fun insertHome(home: Home): Long {
+    suspend fun insertHome(home: Home) {
         try {
-            return homeDao.insert(home)
+            homeDao.insert(home)
         } catch (e: Exception) {
             Log.e("HomeRepository", "Error inserting Home", e)
             throw e
@@ -27,11 +27,7 @@ class HomeRepository @Inject constructor(
         }
     }
 
-    fun getHomeById(id: Long): Flow<Home> {
-        return homeDao.getById(id)
-    }
+    fun getHomeById(id: String): Flow<Home?> = homeDao.getById(id)
 
-    fun getAllHomes(): Flow<List<Home>> {
-        return homeDao.getAll()
-    }
+    fun getAllHomes(): Flow<List<Home>> = homeDao.getAll()
 }

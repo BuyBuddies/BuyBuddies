@@ -1,34 +1,42 @@
 package com.pwojtowicz.buybuddies.data.repository
 
 import android.util.Log
+import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.data.api.GroceryListItemApiService
 import com.pwojtowicz.buybuddies.data.dao.GroceryListDao
 import com.pwojtowicz.buybuddies.data.dao.GroceryListItemDao
 import com.pwojtowicz.buybuddies.data.dao.GroceryListLabelDao
 import com.pwojtowicz.buybuddies.data.dto.GroceryListItemDTO
-import com.pwojtowicz.buybuddies.data.entity.GroceryListItem
 import com.pwojtowicz.buybuddies.data.entity.GroceryList
+import com.pwojtowicz.buybuddies.data.entity.GroceryListItem
 import com.pwojtowicz.buybuddies.data.entity.GroceryListLabel
 import com.pwojtowicz.buybuddies.data.enums.MeasurementUnit
+import com.pwojtowicz.buybuddies.data.enums.SyncStatus
+import com.pwojtowicz.buybuddies.utility.toEpochMillis
+import com.pwojtowicz.buybuddies.utility.toIsoString
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import retrofit2.HttpException
-import java.time.LocalDateTime
 import javax.inject.Inject
 
-
-class GroceryListItemRepository @Inject constructor (
+class GroceryListItemRepository @Inject constructor(
     private val groceryListDao: GroceryListDao,
     private val groceryListItemDao: GroceryListItemDao,
     private val groceryListLabelDao: GroceryListLabelDao,
+    private val guestModeManager: GuestModeManager,
     private val groceryListItemApiService: GroceryListItemApiService
 ) {
+    companion object {
+        private const val TAG = "GroceryListItemRepository"
+    }
+
     // ### Grocery List Operations ###
+
     fun getAllGroceryLists(): Flow<List<GroceryList>> = groceryListDao.getAllGroceryListsSorted()
 
-    //fun getGroceryListsByLabelId(labelId: Long?): Flow<List<GroceryList>> { return groceryListDao.getGroceryListsByLabelId(labelId) }
-    suspend fun insertGroceryList(groceryList: GroceryList): Long {
+    suspend fun insertGroceryList(groceryList: GroceryList) {
         try {
-            return groceryListDao.insert(groceryList)
+            groceryListDao.insert(groceryList)
         } catch (e: Exception) {
             Log.e(TAG, "Error inserting GroceryList", e)
             throw e
@@ -39,28 +47,15 @@ class GroceryListItemRepository @Inject constructor (
         groceryListDao.delete(groceryList)
     }
 
-    suspend fun fetchGroceryItemsByListId(listId: Long) {
-        Log.i(TAG, "Fetching user's grocery lists")
+    suspend fun fetchGroceryItemsByListId(listId: String) {
+        Log.i(TAG, "Fetching items for list $listId")
         try {
-            val remoteListItems = groceryListItemApiService.getItemsByList(listId)
-            Log.d(TAG, "Received ${remoteListItems.size} items from remote for listId: $listId")
+            val remoteItems = groceryListItemApiService.getItemsByList(listId)
+            Log.d(TAG, "Received ${remoteItems.size} items from remote")
 
-            val entities = remoteListItems.map { dto ->
-                GroceryListItem(
-                    id = dto.id,
-                    listId = dto.groceryListId,
-                    name = dto.groceryItemName,
-                    quantity = dto.quantity,
-                    unit = MeasurementUnit.valueOf(dto.unit),
-                    categoryId = null,
-                    purchaseStatus = dto.status,
-                    updatedAt = dto.updatedAt ?: System.currentTimeMillis(),
-                    createdAt = dto.createdAt ?: LocalDateTime.now().toString()
-                )
-            }
-
-            groceryListItemDao.syncItems(entities)
-            Log.i(TAG, "Successfully synced ${entities.size} items to local DB")
+            val entities = remoteItems.map { dto -> dto.toEntity() }
+            groceryListItemDao.syncItems(listId, entities)
+            Log.i(TAG, "Synced ${entities.size} items for list $listId")
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching grocery list items", e)
             throw handleApiError(e)
@@ -68,109 +63,93 @@ class GroceryListItemRepository @Inject constructor (
     }
 
     suspend fun fetchGroceryListItems() {
-        Log.i(TAG, "Fetching user's grocery lists")
+        Log.i(TAG, "Fetching all user grocery items")
+
+        if (guestModeManager.isGuestMode()) {
+            Log.d(TAG, "Guest mode: using local items only")
+            return
+        }
+
         try {
-            val remoteListItems = groceryListItemApiService.getListItemByUser()
-            Log.d(TAG, "Received ${remoteListItems.size} lists items from remote")
+            val remoteItems = groceryListItemApiService.getListItemByUser()
+            Log.d(TAG, "Received ${remoteItems.size} items from remote")
 
-            val validItems = remoteListItems.filterNot { dto ->
-                groceryListItemDao.existsByListIdAndName(dto.groceryListId, dto.groceryItemName)
+            // Group by listId and sync each list separately (scoped delete)
+            remoteItems.groupBy { it.groceryListId }.forEach { (listId, dtos) ->
+                val entities = dtos.map { it.toEntity() }
+                groceryListItemDao.syncItems(listId, entities)
             }
-
-            if (validItems.isNotEmpty()) {
-                val entities = validItems.map { dto ->
-                    GroceryListItem(
-                        id = dto.id,
-                        listId = dto.groceryListId,
-                        name = dto.groceryItemName,
-                        quantity = dto.quantity,
-                        unit = MeasurementUnit.valueOf(dto.unit),
-                        categoryId = null,
-                        purchaseStatus = dto.status,
-                        updatedAt = dto.updatedAt ?: System.currentTimeMillis(),
-                        createdAt = dto.createdAt ?: LocalDateTime.now().toString()
-                    )
-                }
-
-                groceryListItemDao.syncItems(entities)
-                Log.i(TAG, "Successfully synced ${entities.size} items to local DB")
-            } else {
-                Log.i(TAG, "No new items to sync")
-            }
+            Log.i(TAG, "Synced items across ${remoteItems.groupBy { it.groceryListId }.size} lists")
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching grocery list items", e)
             throw handleApiError(e)
         }
     }
 
-    suspend fun createGroceryListItem(groceryListItem: GroceryListItem): Long {
-        Log.i(TAG, "Creating new grocery list item: ${groceryListItem.name}")
+    suspend fun createGroceryListItem(groceryListItem: GroceryListItem): String {
+        Log.i(TAG, "Creating item: ${groceryListItem.name}")
+
         try {
             validateGroceryListItem(groceryListItem)?.let { throw it }
+
+            if (guestModeManager.isGuestMode()) {
+                Log.d(TAG, "Guest mode: Creating item locally only")
+                groceryListItemDao.insert(groceryListItem)
+                return groceryListItem.id
+            }
 
             val dto = GroceryListItemDTO(
                 groceryListId = groceryListItem.listId,
                 groceryItemName = groceryListItem.name,
                 quantity = groceryListItem.quantity,
-                unit = groceryListItem.unit.toString(),
+                unit = groceryListItem.unit.name,
                 status = groceryListItem.purchaseStatus,
-                createdAt = groceryListItem.createdAt,
-                updatedAt = groceryListItem.updatedAt
+                createdAt = groceryListItem.createdAt.toIsoString(),
+                updatedAt = groceryListItem.updatedAt.toIsoString()
             )
 
-            // Create on remote
             val createdItem = groceryListItemApiService.createListItem(dto)
-            Log.d(TAG, "Successfully created list item on remote with ID: ${createdItem.id}")
+            Log.d(TAG, "Created item on remote: ${createdItem.id}")
 
-            // Save to local DB
-            return groceryListItemDao.insert(groceryListItem.copy(id = createdItem.id))
+            val synced = groceryListItem.copy(
+                id = createdItem.id,
+                syncStatus = SyncStatus.SYNCED,
+                syncedAt = System.currentTimeMillis()
+            )
+            groceryListItemDao.insert(synced)
+            return synced.id
         } catch (e: Exception) {
             Log.e(TAG, "Error creating grocery list item", e)
             throw handleApiError(e)
         }
     }
 
-    private suspend fun validateGroceryListItem(groceryListItem: GroceryListItem): Throwable? {
-        return when {
-            groceryListItem.name.isBlank() -> {
-                Log.w(TAG, "Attempted to create list with empty name")
-                IllegalArgumentException("List name cannot be empty")
-            }
-            groceryListItemDao.exists(groceryListItem.name, groceryListItem.listId) -> {
-                Log.w(TAG, "List with name '${groceryListItem.name}' already exists for list ${groceryListItem.listId}")
-                IllegalArgumentException("A list with this name already exists")
-            }
-            else -> null
-        }
-    }
-
     suspend fun updateLocalItem(groceryListItem: GroceryListItem) {
         try {
             groceryListItemDao.update(groceryListItem)
-            Log.d(TAG, "Successfully updated local item: ${groceryListItem.id}")
+            Log.d(TAG, "Updated local item: ${groceryListItem.id}")
         } catch (e: Exception) {
             Log.e(TAG, "Error updating local item", e)
             throw e
         }
     }
 
-    suspend fun updateRemoteItem(activeGroceryListId: Long, groceryListItem: GroceryListItem) {
+    suspend fun updateRemoteItem(groceryListItem: GroceryListItem) {
+        if (guestModeManager.isGuestMode()) return
+
         try {
             val dto = GroceryListItemDTO(
                 id = groceryListItem.id,
                 groceryListId = groceryListItem.listId,
                 groceryItemName = groceryListItem.name,
                 quantity = groceryListItem.quantity,
-                unit = groceryListItem.unit.toString(),
+                unit = groceryListItem.unit.name,
                 status = groceryListItem.purchaseStatus,
-                createdAt = groceryListItem.createdAt,
-                updatedAt = System.currentTimeMillis()
+                createdAt = groceryListItem.createdAt.toIsoString(),
+                updatedAt = System.currentTimeMillis().toIsoString()
             )
-
-            val updatedItem = groceryListItemApiService.createOrUpdateGroceryListItem(
-                listItemDTO = dto
-            )
-            Log.d(TAG, "Successfully updated remote item: ${updatedItem.id}")
+            val updated = groceryListItemApiService.createOrUpdateGroceryListItem(dto)
+            Log.d(TAG, "Updated remote item: ${updated.id}")
         } catch (e: Exception) {
             Log.e(TAG, "Error updating remote item", e)
             throw handleApiError(e)
@@ -179,8 +158,8 @@ class GroceryListItemRepository @Inject constructor (
 
     suspend fun updateItem(groceryListItem: GroceryListItem) {
         try {
-            updateRemoteItem(groceryListItem.listId, groceryListItem)
             updateLocalItem(groceryListItem)
+            updateRemoteItem(groceryListItem)
         } catch (e: Exception) {
             Log.e(TAG, "Error during full item update", e)
             throw e
@@ -188,73 +167,83 @@ class GroceryListItemRepository @Inject constructor (
     }
 
     // ### Grocery Item Operations ###
-    fun getAllGroceryItemsByListId(listId: Long): Flow<List<GroceryListItem>> {
-        return groceryListItemDao.getByListId(listId)
-    }
-    suspend fun updateGroceryItem(groceryListItem: GroceryListItem) {
-        groceryListItemDao.update(groceryListItem)
-    }
-    suspend fun insertGroceryItem(groceryListItem: GroceryListItem) {
-        groceryListItemDao.insert(groceryListItem)
-    }
-    suspend fun deleteGroceryItem(groceryListItem: GroceryListItem) {
-        Log.i(TAG, "Deleting grocery item ${groceryListItem.id} from list ${groceryListItem.listId}")
-        try {
-            // Convert to DTO and delete from remote
-            val itemDTO = GroceryListItemDTO(
-                id = groceryListItem.id,
-                groceryListId = groceryListItem.listId,
-                groceryItemName = groceryListItem.name,
-                quantity = groceryListItem.quantity,
-                unit = groceryListItem.unit.toString(),
-                status = groceryListItem.purchaseStatus,
-                createdAt = groceryListItem.createdAt,
-                updatedAt = groceryListItem.updatedAt
-            )
 
-            val response = groceryListItemApiService.deleteGroceryItem(itemDTO)
-            Log.d(TAG, "Successfully deleted item from remote")
-            if (response.isSuccessful) {
-                groceryListItemDao.delete(groceryListItem)
-                Log.i(TAG, "Successfully deleted item from local DB")
-            } else {
-                throw Exception("Failed to delete item: ${response.code()}")
+    fun getAllGroceryItemsByListId(listId: String): Flow<List<GroceryListItem>> =
+        groceryListItemDao.getByListId(listId)
+
+    suspend fun updateGroceryItem(groceryListItem: GroceryListItem) =
+        groceryListItemDao.update(groceryListItem)
+
+    suspend fun insertGroceryItem(groceryListItem: GroceryListItem) =
+        groceryListItemDao.insert(groceryListItem)
+
+    suspend fun deleteGroceryItem(groceryListItem: GroceryListItem) {
+        Log.i(TAG, "Deleting item ${groceryListItem.id} from list ${groceryListItem.listId}")
+        try {
+            if (!guestModeManager.isGuestMode()) {
+                val itemDTO = GroceryListItemDTO(
+                    id = groceryListItem.id,
+                    groceryListId = groceryListItem.listId,
+                    groceryItemName = groceryListItem.name,
+                    quantity = groceryListItem.quantity,
+                    unit = groceryListItem.unit.name,
+                    status = groceryListItem.purchaseStatus,
+                    createdAt = groceryListItem.createdAt.toIsoString(),
+                    updatedAt = groceryListItem.updatedAt.toIsoString()
+                )
+                val response = groceryListItemApiService.deleteGroceryItem(itemDTO)
+                if (!response.isSuccessful) {
+                    throw Exception("Failed to delete item: ${response.code()}")
+                }
+                Log.d(TAG, "Deleted item from remote")
             }
+            groceryListItemDao.delete(groceryListItem)
+            Log.i(TAG, "Deleted item from local DB")
         } catch (e: Exception) {
             Log.e(TAG, "Error deleting grocery item", e)
             throw handleApiError(e)
         }
     }
-    suspend fun deleteAllGroceryItems() {
-        groceryListItemDao.deleteAll()
-    }
+
+    suspend fun deleteAllGroceryItems() = groceryListItemDao.deleteAll()
 
     // ### GroceryListLabel Operations ###
-    fun getAllGroceryListLabels(): Flow<List<GroceryListLabel>> {
-        return groceryListLabelDao.getAll()
+
+    fun getAllGroceryListLabels(): Flow<List<GroceryListLabel>> = groceryListLabelDao.getAll()
+
+    suspend fun getLabelById(id: String): GroceryListLabel? = groceryListLabelDao.getById(id)
+
+    fun getLabelsForList(listId: String): Flow<List<GroceryListLabel>> =
+        groceryListLabelDao.getLabelsForList(listId)
+
+    private suspend fun validateGroceryListItem(item: GroceryListItem): Throwable? = when {
+        item.name.isBlank() -> IllegalArgumentException("Item name cannot be empty")
+        groceryListItemDao.exists(item.name, item.listId) ->
+            IllegalArgumentException("An item with this name already exists in the list")
+        else -> null
     }
 
-    suspend fun getLabelById(id: Long): Flow<GroceryListLabel> {
-        return groceryListLabelDao.getById(id)
-    }
-    fun getLabelsForList(listId: Long): Flow<List<GroceryListLabel>> {
-        return groceryListLabelDao.getLabelsForList(listId)
-    }
+    private fun GroceryListItemDTO.toEntity(): GroceryListItem = GroceryListItem(
+        id = id.ifBlank { java.util.UUID.randomUUID().toString() },
+        listId = groceryListId,
+        name = groceryItemName,
+        quantity = quantity,
+        unit = MeasurementUnit.entries.firstOrNull { it.name == unit } ?: MeasurementUnit.PIECE,
+        categoryId = null,
+        purchaseStatus = status,
+        updatedAt = updatedAt.toEpochMillis(),
+        createdAt = createdAt.toEpochMillis(),
+        syncStatus = SyncStatus.SYNCED,
+        syncedAt = System.currentTimeMillis()
+    )
 
-    private fun handleApiError(e: Exception): Throwable {
-        return when (e) {
-            is HttpException -> when (e.code()) {
-                401 -> IllegalStateException("Authentication failed - please log in again")
-                403 -> IllegalStateException("Not authorized for this operation")
-                404 -> IllegalStateException("list item not found")
-                else -> IllegalStateException("Server error: ${e.message}")
-            }
-            else -> e
+    private fun handleApiError(e: Exception): Throwable = when (e) {
+        is HttpException -> when (e.code()) {
+            401 -> IllegalStateException("Authentication failed - please log in again")
+            403 -> IllegalStateException("Not authorized for this operation")
+            404 -> IllegalStateException("Item not found")
+            else -> IllegalStateException("Server error: ${e.message}")
         }
-    }
-
-
-    companion object {
-        private const val TAG = "GroceryListItemRepository"
+        else -> e
     }
 }
