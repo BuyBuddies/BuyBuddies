@@ -12,11 +12,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GroceryListLabelDao {
-    @Query("SELECT * FROM grocery_list_labels")
+    @Query("SELECT * FROM grocery_list_labels WHERE deletedAt IS NULL")
     fun getAll(): Flow<List<GroceryListLabel>>
 
     @Query("SELECT * FROM grocery_list_labels WHERE id = :id")
-    fun getById(id: Long): Flow<GroceryListLabel>
+    suspend fun getById(id: String): GroceryListLabel?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(groceryListLabel: GroceryListLabel)
@@ -36,9 +36,9 @@ interface GroceryListLabelDao {
     @Query("""
         SELECT gll.* FROM grocery_list_labels gll
         INNER JOIN grocery_list_label_cross_ref gllcr ON gll.id = gllcr.labelId
-        WHERE gllcr.groceryListId = :listId
+        WHERE gllcr.groceryListId = :listId AND gll.deletedAt IS NULL
     """)
-    fun getLabelsForList(listId: Long): Flow<List<GroceryListLabel>>
+    fun getLabelsForList(listId: String): Flow<List<GroceryListLabel>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertGroceryListLabelCrossRef(crossRef: GroceryListLabelCross)

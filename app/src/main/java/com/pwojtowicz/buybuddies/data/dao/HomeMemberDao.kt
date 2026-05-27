@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface HomeMemberDao {
     @Query("SELECT * FROM home_members WHERE homeId = :homeId")
-    fun getMembersByHomeId(homeId: Long): Flow<List<HomeMember>>
+    fun getMembersByHomeId(homeId: String): Flow<List<HomeMember>>
 
     @Query("SELECT * FROM home_members WHERE userId = :userId")
     fun getHomesByUserId(userId: String): Flow<List<HomeMember>>

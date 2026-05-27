@@ -5,24 +5,23 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import androidx.room.Update
 import com.pwojtowicz.buybuddies.data.entity.User
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserDao {
-    @Query("SELECT * FROM users")
+    @Query("SELECT * FROM users WHERE deletedAt IS NULL")
     fun getAll(): Flow<List<User>>
 
     @Query("SELECT * FROM users WHERE firebaseUid = :firebaseUid")
-    fun getByFirebaseUid(firebaseUid: String): User
+    suspend fun getByFirebaseUid(firebaseUid: String): User?
 
     @Query("SELECT * FROM users WHERE id = :id")
-    fun getById(id: Long): Flow<User>
+    suspend fun getById(id: String): User?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(user: User): Long
+    suspend fun insert(user: User)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(users: List<User>)
@@ -39,9 +38,6 @@ interface UserDao {
     @Query("DELETE FROM users WHERE firebaseUid = :firebaseUid")
     suspend fun deleteByFirebaseUid(firebaseUid: String)
 
-    @Transaction
-    suspend fun syncUser(user: User) {
-        deleteByFirebaseUid(user.firebaseUid)
-        insert(user)
-    }
+    @Query("UPDATE users SET firebaseUid = :firebaseUid, syncStatus = :syncStatus WHERE id = :localId")
+    suspend fun linkFirebaseUid(localId: String, firebaseUid: String, syncStatus: String = "PENDING")
 }

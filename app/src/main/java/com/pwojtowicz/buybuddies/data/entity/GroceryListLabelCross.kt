@@ -2,7 +2,7 @@ package com.pwojtowicz.buybuddies.data.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
-
+import androidx.room.Index
 
 @Entity(
     tableName = "grocery_list_label_cross_ref",
@@ -20,9 +20,10 @@ import androidx.room.ForeignKey
             childColumns = ["labelId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("labelId")]
 )
 data class GroceryListLabelCross(
-    val groceryListId: Long,
-    val labelId: Long,
+    val groceryListId: String,
+    val labelId: String
 )
