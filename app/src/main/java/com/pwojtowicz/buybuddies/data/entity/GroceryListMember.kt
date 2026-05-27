@@ -2,6 +2,8 @@ package com.pwojtowicz.buybuddies.data.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
+import com.pwojtowicz.buybuddies.data.enums.MemberRole
 
 @Entity(
     tableName = "grocery_list_members",
@@ -15,17 +17,16 @@ import androidx.room.ForeignKey
         ),
         ForeignKey(
             entity = User::class,
-            parentColumns = ["firebaseUid"],
+            parentColumns = ["id"],
             childColumns = ["memberId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("memberId")]
 )
 data class GroceryListMember(
-    val groceryListId: Long,
+    val groceryListId: String,
     val memberId: String,
-//    val role: MemberRole = MemberRole.MEMBER,
-    override val updatedAt: Long = System.currentTimeMillis(),
-    override val createdAt: String = "",
-    override val syncedAt: Long = System.currentTimeMillis()
-) : BaseEntity
+    val role: MemberRole = MemberRole.MEMBER,
+    val joinedAt: Long = System.currentTimeMillis()
+)

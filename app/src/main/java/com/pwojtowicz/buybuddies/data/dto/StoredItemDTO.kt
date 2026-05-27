@@ -1,13 +1,13 @@
 package com.pwojtowicz.buybuddies.data.dto
 
 data class StoredItemDTO(
-    val id: Long?,
+    val id: String? = null,
     val groceryItemName: String,
-    val depotId: Long,
+    val depotId: String,
     val depotName: String,
     val quantity: Double,
     val unit: String,
     val expirationDate: String,
-    override val updatedAt: Long,
-    override val createdAt: String
+    override val updatedAt: String?,
+    override val createdAt: String?
 ) : BaseDto

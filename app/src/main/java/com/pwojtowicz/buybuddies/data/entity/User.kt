@@ -4,6 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.pwojtowicz.buybuddies.data.enums.SyncStatus
+import java.util.UUID
 
 @Entity(
     tableName = "users",
@@ -18,16 +20,19 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["avatarId"]),
         Index(value = ["firebaseUid"], unique = true)
-    ],
+    ]
 )
 data class User(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val firebaseUid: String = "",
+    @PrimaryKey
+    override val id: String = UUID.randomUUID().toString(),
+    val firebaseUid: String? = null,
     val name: String = "",
-    val email: String,
-    val avatarId: Long? = null,
+    val email: String = "",
+    val avatarId: String? = null,
+    override val createdAt: Long = System.currentTimeMillis(),
     override val updatedAt: Long = System.currentTimeMillis(),
-    override val createdAt: String = "",
-    override val syncedAt: Long = System.currentTimeMillis()
+    override val syncedAt: Long = 0L,
+    override val syncStatus: SyncStatus = SyncStatus.LOCAL_ONLY,
+    override val deletedAt: Long? = null,
+    override val version: Long = 0
 ) : BaseEntity

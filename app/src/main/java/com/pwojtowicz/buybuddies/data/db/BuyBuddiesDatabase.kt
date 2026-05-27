@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.pwojtowicz.buybuddies.data.dao.DepotDao
 import com.pwojtowicz.buybuddies.data.dao.GroceryListDao
 import com.pwojtowicz.buybuddies.data.dao.GroceryListItemDao
@@ -16,8 +17,8 @@ import com.pwojtowicz.buybuddies.data.dao.UserDao
 import com.pwojtowicz.buybuddies.data.entity.Depot
 import com.pwojtowicz.buybuddies.data.entity.DepotMember
 import com.pwojtowicz.buybuddies.data.entity.FriendRequest
-import com.pwojtowicz.buybuddies.data.entity.GroceryListItem
 import com.pwojtowicz.buybuddies.data.entity.GroceryList
+import com.pwojtowicz.buybuddies.data.entity.GroceryListItem
 import com.pwojtowicz.buybuddies.data.entity.GroceryListLabel
 import com.pwojtowicz.buybuddies.data.entity.GroceryListLabelCross
 import com.pwojtowicz.buybuddies.data.entity.GroceryListMember
@@ -45,9 +46,10 @@ import com.pwojtowicz.buybuddies.data.entity.UserAvatar
         GroceryListItem::class,
         ItemCategory::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class BuyBuddiesDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun homeDao(): HomeDao

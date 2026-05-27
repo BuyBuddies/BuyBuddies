@@ -73,7 +73,7 @@ fun Navigation(
 
         NavHost(
             navController = navController,
-            startDestination = if(signInState.isSignedIn) NavRoute.Main.route else NavRoute.Auth.route
+            startDestination = if(signInState.isSignedIn || signInState.isGuestMode) NavRoute.Main.route else NavRoute.Auth.route
         ) {
             authNavigation(navController)
             mainNavigation(navController)
@@ -122,7 +122,7 @@ private fun NavGraphBuilder.mainNavigation(
                 navController = navController
             ) { paddingValues ->
                 GroceryListScreen(
-                    groceryListId = groceryListId.toLong(),
+                    groceryListId = groceryListId,
                     paddingValues = paddingValues,
                     navController = navController
                 )

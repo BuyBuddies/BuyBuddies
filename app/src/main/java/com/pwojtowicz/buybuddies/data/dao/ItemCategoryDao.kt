@@ -10,14 +10,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ItemCategoryDao {
-    @Query("SELECT * FROM item_categories")
+    @Query("SELECT * FROM item_categories WHERE deletedAt IS NULL")
     fun getAll(): Flow<List<ItemCategory>>
 
     @Query("SELECT * FROM item_categories WHERE id = :id")
-    fun getById(id: Long): Flow<ItemCategory?>
+    suspend fun getById(id: String): ItemCategory?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(category: ItemCategory): Long
+    suspend fun insert(category: ItemCategory)
 
     @Delete
     suspend fun delete(category: ItemCategory)

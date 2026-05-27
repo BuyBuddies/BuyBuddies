@@ -28,7 +28,7 @@ fun MainListContainer(
     groceryLists: List<GroceryList>,
     groceryListLabels: List<GroceryListLabel>,
     onClickGroceryList: (String) -> Unit,
-    onLongPressGroceryList: (Long) -> Unit,
+    onLongPressGroceryList: (String) -> Unit,
     onSearchInput: (String) -> Unit,
     onStatusFilterChange: (GroceryListStatus?) -> Unit,
     onLabelFilterChange: (GroceryListLabel?) -> Unit
@@ -61,7 +61,7 @@ fun MainListContainer(
                         groceryList = groceryList,
                         modifier = Modifier.pointerInput(groceryList.id) {
                             detectTapGestures(
-                                onTap = { onClickGroceryList(groceryList.id.toString()) },
+                                onTap = { onClickGroceryList(groceryList.id) },
                                 onLongPress = {
                                     onLongPressGroceryList(groceryList.id)
                                 }
@@ -78,13 +78,13 @@ fun MainListContainer(
 @Composable
 fun PreviewMainListContainer() {
     val mockGroceryLists = listOf(
-        GroceryList(name = "Weekly Groceries", listStatus = GroceryListStatus.ACTIVE.name),
-        GroceryList(name = "Daily Groceries", listStatus = GroceryListStatus.ACTIVE.name),
-        GroceryList(name = "Home Groceries", listStatus = GroceryListStatus.ACTIVE.name),
-        GroceryList(name = "Dinner Groceries", listStatus = GroceryListStatus.ACTIVE.name),
-        GroceryList(name = "Breakfast Groceries", listStatus = GroceryListStatus.ACTIVE.name),
-        GroceryList(name = "Lunch Groceries", listStatus = GroceryListStatus.ACTIVE.name),
-        GroceryList(name = "Party Supplies", listStatus = GroceryListStatus.DONE.name)
+        GroceryList(name = "Weekly Groceries", listStatus = GroceryListStatus.ACTIVE),
+        GroceryList(name = "Daily Groceries", listStatus = GroceryListStatus.ACTIVE),
+        GroceryList(name = "Home Groceries", listStatus = GroceryListStatus.ACTIVE),
+        GroceryList(name = "Dinner Groceries", listStatus = GroceryListStatus.ACTIVE),
+        GroceryList(name = "Breakfast Groceries", listStatus = GroceryListStatus.ACTIVE),
+        GroceryList(name = "Lunch Groceries", listStatus = GroceryListStatus.ACTIVE),
+        GroceryList(name = "Party Supplies", listStatus = GroceryListStatus.DONE)
     )
 
     val mockGroceryListLabels = listOf(

@@ -8,6 +8,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
+import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.data.entity.GroceryListItem
 import com.pwojtowicz.buybuddies.data.enums.MeasurementUnit
 import com.pwojtowicz.buybuddies.data.enums.PurchaseStatus
@@ -17,22 +18,21 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
 class GroceryViewModel @Inject constructor(
    private val authorizationClient: AuthorizationClient,
    private val groceryListItemRepository: GroceryListItemRepository,
-   private val groceryListRepository: GroceryListRepository
+   private val groceryListRepository: GroceryListRepository,
+   private val guestModeManager: GuestModeManager
 ): ViewModel() {
    private val _unsavedChanges = mutableStateListOf<GroceryListItem>()
    val hasUnsavedChanges = derivedStateOf { _unsavedChanges.isNotEmpty() }
 
-   private val _activeGroceryListId = MutableStateFlow<Long?>(null)
-   val activeGroceryListId: StateFlow<Long?> = _activeGroceryListId
+   private val _activeGroceryListId = MutableStateFlow<String?>(null)
+   val activeGroceryListId: StateFlow<String?> = _activeGroceryListId
 
    private val _groceryListName = MutableStateFlow("")
    val groceryListName: StateFlow<String> = _groceryListName.asStateFlow()
@@ -49,7 +49,7 @@ class GroceryViewModel @Inject constructor(
    private val _error = MutableLiveData<String?>()
    val error: LiveData<String?> = _error
 
-   fun setActiveGroceryListId(listId: Long?) {
+   fun setActiveGroceryListId(listId: String?) {
       _activeGroceryListId.value = listId
       if (listId != null) {
          fetchGroceryListItems(listId)
@@ -59,7 +59,7 @@ class GroceryViewModel @Inject constructor(
    }
 
    fun createGroceryItem(
-      listId: Long,
+      listId: String,
       name: String,
       quantity: Double = 0.0,
       unit: MeasurementUnit = MeasurementUnit.PIECE,
@@ -68,8 +68,6 @@ class GroceryViewModel @Inject constructor(
       viewModelScope.launch {
          try {
             _loading.value = true
-            val currentUser = authorizationClient.getSignedInUser()
-               ?: throw IllegalStateException("No user signed in")
 
             val newGroceryListItem = GroceryListItem(
                listId = listId,
@@ -77,11 +75,11 @@ class GroceryViewModel @Inject constructor(
                quantity = quantity,
                unit = unit,
                purchaseStatus = status,
-               createdAt = LocalDateTime.now().toString(),
-               updatedAt = System.currentTimeMillis()
             )
             groceryListItemRepository.createGroceryListItem(newGroceryListItem)
+
             fetchGroceryListItems(listId)
+
          } catch (e: Exception) {
             Log.e(TAG, "Error creating grocery item", e)
             _error.value = when (e) {
@@ -95,7 +93,7 @@ class GroceryViewModel @Inject constructor(
       }
    }
 
-   private fun fetchGroceryListItems(listId: Long) {
+   private fun fetchGroceryListItems(listId: String) {
       viewModelScope.launch {
          try {
             _loading.value = true
@@ -114,7 +112,7 @@ class GroceryViewModel @Inject constructor(
       }
    }
 
-   fun updateListName(listId: Long, newName: String) {
+   fun updateListName(listId: String, newName: String) {
       viewModelScope.launch {
          try {
             _loading.value = true
@@ -142,8 +140,8 @@ class GroceryViewModel @Inject constructor(
       viewModelScope.launch {
          try {
             _unsavedChanges.forEach { item ->
-               activeGroceryListId.value?.let { groceryListItemRepository.updateRemoteItem(it, item) }
                groceryListItemRepository.updateLocalItem(item)
+               groceryListItemRepository.updateRemoteItem(item)
             }
             _unsavedChanges.clear()
          } catch (e: Exception) {
@@ -209,7 +207,7 @@ class GroceryViewModel @Inject constructor(
       }
    }
 
-   fun deleteList(listId: Long) {
+   fun deleteList(listId: String) {
       viewModelScope.launch {
          try {
             _loading.value = true
@@ -243,7 +241,7 @@ class GroceryViewModel @Inject constructor(
       }
    }
 
-   fun deleteMember(listId: Long, email: String) {
+   fun deleteMember(listId: String, email: String) {
       viewModelScope.launch {
          try {
             _loading.value = true
@@ -258,7 +256,7 @@ class GroceryViewModel @Inject constructor(
       }
    }
 
-   fun fetchMembers(listId: Long) {
+   fun fetchMembers(listId: String) {
       viewModelScope.launch {
          try {
             val membersList = groceryListRepository.getListMembers(listId)
@@ -289,7 +287,7 @@ class GroceryViewModel @Inject constructor(
       }
    }
 
-   fun fetchGroceryListName(groceryListId: Long) {
+   fun fetchGroceryListName(groceryListId: String) {
       viewModelScope.launch {
          try {
             val name = groceryListRepository.getListNameById(groceryListId)

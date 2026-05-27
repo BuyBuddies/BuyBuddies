@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun GroceryListScreen(
-    groceryListId: Long,
+    groceryListId: String,
     navController: NavHostController,
     paddingValues: PaddingValues,
     viewModel: GroceryViewModel = hiltViewModel(),
@@ -59,8 +59,10 @@ fun GroceryListScreen(
 
     LaunchedEffect(Unit) {
         viewModel.setActiveGroceryListId(groceryListId)
-        viewModel.fetchGroceryListName(groceryListId)
-        viewModel.fetchMembers(groceryListId)
+        if(authViewModel.isGuestMode()) {
+            viewModel.fetchGroceryListName(groceryListId)
+            viewModel.fetchMembers(groceryListId)
+        }
     }
 
     // Handle back navigation with unsaved changes
@@ -234,7 +236,7 @@ fun PreviewGroceryListScreen() {
     val navController = rememberNavController()
 
     GroceryListScreen(
-        groceryListId = 0,
+        groceryListId = "",
         navController = navController,
         paddingValues = paddingValues
     )

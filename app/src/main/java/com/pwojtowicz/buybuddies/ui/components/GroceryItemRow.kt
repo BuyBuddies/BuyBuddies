@@ -138,7 +138,6 @@ fun EditGroceryItemDialog(groceryListItem: GroceryListItem, onDismiss: () -> Uni
 fun PreviewGroceryItemRow() {
     GroceryItemRow(
         groceryListItem = GroceryListItem(
-            listId = 1L,
             name = "Milk",
             quantity = 1.0
         ),

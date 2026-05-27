@@ -1,6 +1,7 @@
 package com.pwojtowicz.buybuddies.di
 
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
+import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.data.api.AuthApiService
 import com.pwojtowicz.buybuddies.data.api.GroceryListApiService
 import com.pwojtowicz.buybuddies.data.api.GroceryListItemApiService
@@ -47,11 +48,13 @@ object RepositoryModule {
     fun provideGroceryListRepository(
         authClient: AuthorizationClient,
         groceryListApiService: GroceryListApiService,
-        groceryListDao: GroceryListDao
+        groceryListDao: GroceryListDao,
+        guestModeManager: GuestModeManager
     ): GroceryListRepository = GroceryListRepository(
         authClient,
         groceryListApiService,
-        groceryListDao
+        groceryListDao,
+        guestModeManager
     )
 
     @Provides
@@ -60,11 +63,13 @@ object RepositoryModule {
         groceryListDao: GroceryListDao,
         groceryListItemDao: GroceryListItemDao,
         groceryListLabelDao: GroceryListLabelDao,
-        groceryListItemApiService: GroceryListItemApiService
+        groceryListItemApiService: GroceryListItemApiService,
+        guestModeManager: GuestModeManager
     ): GroceryListItemRepository = GroceryListItemRepository(
-        groceryListDao,
-        groceryListItemDao,
-        groceryListLabelDao,
-        groceryListItemApiService
+        groceryListDao = groceryListDao,
+        groceryListItemDao = groceryListItemDao,
+        groceryListLabelDao = groceryListLabelDao,
+        groceryListItemApiService = groceryListItemApiService,
+        guestModeManager = guestModeManager
     )
 }

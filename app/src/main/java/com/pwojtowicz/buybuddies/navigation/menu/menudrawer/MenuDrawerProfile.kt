@@ -41,6 +41,7 @@ import com.pwojtowicz.buybuddies.ui.theme.bb_theme_text_clr_light
 fun MenuDrawerProfile(
     onNavToProfile: () -> Unit,
     onLogout: () -> Unit,
+    isGuestMode: Boolean,
     username: String,
 ) {
     var isExpanded by remember { mutableStateOf(false) }
@@ -50,7 +51,9 @@ fun MenuDrawerProfile(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(10.dp, 15.dp)
-                .clickable { isExpanded = !isExpanded },
+                .clickable {
+                    if(!isGuestMode) { isExpanded = !isExpanded }
+                    else { onLogout() } },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -66,15 +69,17 @@ fun MenuDrawerProfile(
                 )
             }
 
-            Icon(
-                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (isExpanded) "Collapse" else "Expand",
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(Color.LightGray.copy(alpha = 0.2f))
-                    .padding(4.dp)
-            )
+            if(!isGuestMode) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray.copy(alpha = 0.2f))
+                        .padding(4.dp)
+                )
+            }
 
         }
 
@@ -85,21 +90,24 @@ fun MenuDrawerProfile(
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
-            DrawerProfileItems(
-                onNavToProfile = onNavToProfile,
-                onLogout = onLogout
-            )
+            if(!isGuestMode) {
+                DrawerProfileItems(
+                    onNavToProfile = onNavToProfile,
+                    onLogout = onLogout
+                )
+            }
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true, backgroundColor = 0xFF009688)
 @Composable
 fun MenuDrawerProfilePreview() {
     Box(){
         MenuDrawerProfile(
             onNavToProfile = {},
             username = "testName",
+            isGuestMode = false,
             onLogout = {}
         )
     }

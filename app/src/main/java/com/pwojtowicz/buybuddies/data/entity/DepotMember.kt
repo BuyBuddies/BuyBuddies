@@ -2,8 +2,8 @@ package com.pwojtowicz.buybuddies.data.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import com.pwojtowicz.buybuddies.data.enums.MemberRole
-
 
 @Entity(
     tableName = "depot_members",
@@ -15,13 +15,12 @@ import com.pwojtowicz.buybuddies.data.enums.MemberRole
             childColumns = ["depotId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index("depotId")]
 )
 data class DepotMember(
-    val depotId: Long,
+    val depotId: String,
     val userId: String,
     val role: MemberRole = MemberRole.MEMBER,
-    override val updatedAt: Long = System.currentTimeMillis(),
-    override val createdAt: String = "",
-    override val syncedAt: Long = System.currentTimeMillis()
-) : BaseEntity
+    val joinedAt: Long = System.currentTimeMillis()
+)

@@ -30,7 +30,6 @@ class HomeViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val homeRepository: HomeRepository,
 ) : ViewModel() {
-    // UI State
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -55,7 +54,7 @@ class HomeViewModel @Inject constructor(
     ) { lists, state ->
         lists.filter { groceryList ->
             (state.searchText.isEmpty() || groceryList.name.contains(state.searchText, ignoreCase = true)) &&
-                    (state.selectedStatus == null || groceryList.listStatus == state.selectedStatus.name) &&
+                    (state.selectedStatus == null || groceryList.listStatus == state.selectedStatus) &&
                     (state.selectedLabel == null || groceryListItemRepository.getLabelsForList(groceryList.id).first().contains(state.selectedLabel))
         }
     }.stateIn(
@@ -74,13 +73,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-
-    // UI State Updates
     private fun updateUiState(update: (HomeUiState) -> HomeUiState) {
         _uiState.value = update(_uiState.value)
     }
 
-    // UI Event Handlers
     fun setShowCardVisibility(newVisibility: Boolean) {
         updateUiState { it.copy(showCard = newVisibility) }
     }
@@ -101,23 +97,20 @@ class HomeViewModel @Inject constructor(
         updateUiState { it.copy(selectedLabel = label) }
     }
 
-    fun setLongPressedGroceryList(groceryListId: Long) {
+    fun setLongPressedGroceryList(groceryListId: String) {
         updateUiState { it.copy(longPressedListId = groceryListId) }
     }
 
-    // Grocery List Operations
     fun createGroceryList(name: String, description: String = "") {
         viewModelScope.launch {
             try {
-                val currentUser = authorizationClient.getSignedInUser()
-                    ?: throw IllegalStateException("No user signed in")
+                val ownerId = authorizationClient.getSignedInUser()?.firebaseUid ?: ""
 
                 val newGroceryList = GroceryList(
                     name = name.trim(),
                     description = description.trim(),
-                    ownerId = currentUser.firebaseUid,
-                    listStatus = GroceryListStatus.ACTIVE.name,
-                    createdAt = System.currentTimeMillis().toString()
+                    ownerId = ownerId,
+                    listStatus = GroceryListStatus.ACTIVE,
                 )
 
                 val newId = groceryListRepository.createGroceryList(newGroceryList)
@@ -137,7 +130,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun deleteGroceryListById(groceryListId: Long) {
+    fun deleteGroceryListById(groceryListId: String) {
         viewModelScope.launch {
             try {
                 groceryListRepository.deleteGroceryList(groceryListId)
@@ -154,12 +147,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun getLabelByListId(id: Long) {
+    fun getLabelByListId(id: String) {
         viewModelScope.launch {
             try {
-                groceryListItemRepository.getLabelById(id).collect { label ->
-                    updateUiState { it.copy(selectedLabel = label) }
-                }
+                val label = groceryListItemRepository.getLabelById(id)
+                updateUiState { it.copy(selectedLabel = label) }
             } catch (e: Exception) {
                 Log.e(TAG, "Error getting label", e)
                 updateUiState { it.copy(error = e.message) }
@@ -167,7 +159,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // State Reset Functions
     fun resetNewListId() {
         updateUiState { it.copy(newListId = null) }
     }
@@ -184,8 +175,8 @@ class HomeViewModel @Inject constructor(
 data class HomeUiState(
     val showCard: Boolean = false,
     val showMenuSheet: Boolean = false,
-    val newListId: Long? = null,
-    val longPressedListId: Long = 0,
+    val newListId: String? = null,
+    val longPressedListId: String = "",
     val searchText: String = "",
     val selectedStatus: GroceryListStatus? = null,
     val selectedLabel: GroceryListLabel? = null,

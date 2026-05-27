@@ -70,11 +70,11 @@ fun CustomTopBar(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },
             ) {
-                if (groceryList.listStatus == GroceryListStatus.ACTIVE.name) {
+                if (groceryList.listStatus == GroceryListStatus.ACTIVE) {
                     DropdownMenuItem(
                         text = { Text("Done") },
                         onClick = {
-                            updateAsDone(groceryList.copy(listStatus = GroceryListStatus.DONE.name))
+                            updateAsDone(groceryList.copy(listStatus = GroceryListStatus.DONE))
                             showMenu = false
                         }
                     )
@@ -82,7 +82,7 @@ fun CustomTopBar(
                     DropdownMenuItem(
                         text = { Text("Make Active") },
                         onClick = {
-                            updateAsDone(groceryList.copy(listStatus = GroceryListStatus.ACTIVE.name))
+                            updateAsDone(groceryList.copy(listStatus = GroceryListStatus.ACTIVE))
                             showMenu = false
                         }
                     )

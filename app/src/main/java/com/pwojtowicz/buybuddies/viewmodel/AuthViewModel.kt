@@ -20,6 +20,7 @@ import com.pwojtowicz.buybuddies.data.repository.UserRepository
 import com.pwojtowicz.buybuddies.ui.message.AppMessage
 import com.pwojtowicz.buybuddies.ui.message.MessageHandler
 import com.pwojtowicz.buybuddies.utility.InstallManager
+import com.pwojtowicz.buybuddies.utility.toIsoString
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +30,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import retrofit2.HttpException
 import java.io.IOException
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -52,17 +52,11 @@ class AuthViewModel @Inject constructor(
 
     init {
         _currentUser.value = authClient.getSignedInUser()
+        // Read synchronously before first composition to avoid login screen flash
+        _state.update { it.copy(isGuestMode = guestModeManager.isGuestMode()) }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            // check if logged in before
             checkIfSignedIn()
-
-            // check for guest mode on startup
-            val isGuestMode = guestModeManager.isGuestMode()
-            _state.update { it.copy(
-                isLoading = false,
-                isGuestMode = isGuestMode
-            )}
+            _state.update { it.copy(isLoading = false) }
         }
     }
 
@@ -70,6 +64,10 @@ class AuthViewModel @Inject constructor(
         val user = authClient.getSignedInUser()
         _currentUser.value = user
         return user
+    }
+
+    fun isGuestMode(): Boolean {
+        return state.value.isGuestMode
     }
 
     suspend fun signInWithIntent(intent: Intent): SignInResult {
@@ -146,8 +144,12 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             setLoading(true)
             try {
-                // Clear guest mode when user signed in
-                if(result.data != null) {
+                if (result.data != null && guestModeManager.isGuestMode()) {
+                    try {
+                        groceryListRepository.migrateGuestDataToAuthenticatedUser(result.data.firebaseUid)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Guest data migration failed, continuing sign-in", e)
+                    }
                     guestModeManager.clearGuestMode()
                 }
 
@@ -199,8 +201,8 @@ class AuthViewModel @Inject constructor(
         firebaseUid = userData.firebaseUid,
         name = userData.username ?: "",
         email = userData.email ?: "",
-        createdAt = LocalDateTime.now().toString(),
-        updatedAt = System.currentTimeMillis()
+        createdAt = System.currentTimeMillis().toIsoString(),
+        updatedAt = System.currentTimeMillis().toIsoString()
     )
 
     private suspend fun updateUser(userDTO: UserDTO, authService: AuthApiService): UserDTO {
@@ -286,17 +288,19 @@ class AuthViewModel @Inject constructor(
     }
 
     fun setGuestMode(isGuest: Boolean) {
-        guestModeManager.setGuestMode(isGuest = isGuest)
-
-        _state.update { it.copy(isGuestMode = isGuest) }
-
-        Log.d(TAG, "Guest mode set to: $isGuest")
+        viewModelScope.launch {
+            guestModeManager.setGuestMode(isGuest = isGuest)
+            _state.update { it.copy(isGuestMode = isGuest) }
+            Log.d(TAG, "Guest mode set to: $isGuest")
+        }
     }
 
     fun saveGuestModeToPreferences() {
         val isGuest = state.value.isGuestMode
-        guestModeManager.setGuestMode(isGuest)
-        Log.d(TAG, "Saved guest mode to preferences: $isGuest")
+        viewModelScope.launch {
+            guestModeManager.setGuestMode(isGuest)
+            Log.d(TAG, "Saved guest mode to preferences: $isGuest")
+        }
     }
 
     fun resetState() {

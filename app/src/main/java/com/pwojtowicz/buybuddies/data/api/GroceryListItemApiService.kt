@@ -1,7 +1,6 @@
 package com.pwojtowicz.buybuddies.data.api
 
 import com.pwojtowicz.buybuddies.data.dto.GroceryListItemDTO
-import com.pwojtowicz.buybuddies.data.dto.UserDTO
 import com.pwojtowicz.buybuddies.data.enums.PurchaseStatus
 import retrofit2.Response
 import retrofit2.http.Body
@@ -24,33 +23,32 @@ interface GroceryListItemApiService {
 
     @GET("api/grocery_list_items/{id}")
     suspend fun getListItem(
-        @Path("id") id: Long
+        @Path("id") id: String
     ): GroceryListItemDTO
 
     @GET("api/grocery_list_items/user")
-    suspend fun getListItemByUser(
-    ): List<GroceryListItemDTO>
+    suspend fun getListItemByUser(): List<GroceryListItemDTO>
 
     @GET("api/grocery_list_items/list/{listId}")
     suspend fun getItemsByList(
-        @Path("listId") listId: Long
+        @Path("listId") listId: String
     ): List<GroceryListItemDTO>
 
     @GET("api/grocery_list_items/list/{listId}/status/{status}")
     suspend fun getItemsByListAndStatus(
-        @Path("listId") listId: Long,
+        @Path("listId") listId: String,
         @Path("status") status: PurchaseStatus
     ): List<GroceryListItemDTO>
 
     @PUT("api/grocery_list_items/{id}")
     suspend fun updateListItem(
-        @Path("id") id: Long,
+        @Path("id") id: String,
         @Body listItemDTO: GroceryListItemDTO
     ): GroceryListItemDTO
 
     @PATCH("api/grocery_list_items/{id}/status")
     suspend fun updateItemStatus(
-        @Path("id") id: Long,
+        @Path("id") id: String,
         @Body status: PurchaseStatus
     ): GroceryListItemDTO
 

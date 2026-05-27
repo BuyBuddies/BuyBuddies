@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">BuyBuddies</string>
+<string name="web_client_id">825639745147-ftfvc88ecr37pr0nj17fl1bu5631e1gs.apps.googleusercontent.com</string>
+    <string name="welcome_message">Welcome to BuyBuddies</string>
+</resources>
