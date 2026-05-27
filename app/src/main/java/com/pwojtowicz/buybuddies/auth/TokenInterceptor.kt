@@ -38,7 +38,7 @@ class TokenInterceptor @Inject constructor(
     ): Response {
         val token = runBlocking {
             try {
-                authClient.getIdToken(forceRefresh) ?: throw Exception("Failed to get token")
+                authClient.getIdToken(forceRefresh)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to get token", e)
                 null
