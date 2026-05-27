@@ -12,8 +12,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,8 +34,8 @@ fun MenuDrawer(
     authViewModel: AuthViewModel = hiltViewModel(),
 ) {
     val coroutineScope = rememberCoroutineScope()
-
-    val currentUser by authViewModel.currentUser.collectAsState()
+    val currentUser = authViewModel.getCurrentUser()
+    val isGuestMode = authViewModel.isGuestMode()
 
     Surface(
         modifier = Modifier
@@ -53,11 +51,9 @@ fun MenuDrawer(
             MenuDrawerProfile(
                 onLogout = {
                     authViewModel.signOut()
-
                     navController.navigate(NavRoute.Auth.route) {
                         popUpTo(NavRoute.Main.route) { inclusive = true }
                     }
-
                 },
                 onNavToProfile = {
                     if(currentUser != null) {
@@ -74,6 +70,7 @@ fun MenuDrawer(
                         }
                     }
                 },
+                isGuestMode = isGuestMode,
                 username = currentUser?.username ?: "Sign In",
             )
             MenuDrawerItem(

@@ -25,6 +25,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.pwojtowicz.buybuddies.data.entity.GroceryList
 import com.pwojtowicz.buybuddies.data.entity.GroceryListStatus
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun GroceryListItem(
@@ -84,17 +87,22 @@ fun GroceryListName(name: String){
         Text(textAlign = TextAlign.Center, text = name)
 }
 
+private val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
+
 @Composable
-fun GroceryListDate(date: String) {
-        Text(text = date)
+fun GroceryListDate(date: Long) {
+    val formatted = remember(date) {
+        dateFormatter.format(Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()))
+    }
+    Text(text = formatted)
 }
 
 @Composable
-fun GroceryListStatus(status: String) {
+fun GroceryListStatus(status: GroceryListStatus) {
     val color = when (status) {
-        GroceryListStatus.ACTIVE.name -> Color.Yellow
-        GroceryListStatus.DROPPED.name -> Color.Red
-        GroceryListStatus.DONE.name -> Color.Green
+        GroceryListStatus.ACTIVE -> Color.Yellow
+        GroceryListStatus.DROPPED -> Color.Red
+        GroceryListStatus.DONE -> Color.Green
         else -> Color.Gray
     }
     Box(modifier = Modifier
@@ -112,8 +120,8 @@ fun PreviewGroceryItemComponent() {
     GroceryListItem(
         groceryList = GroceryList(
             name = "Apples",
-            createdAt = "30-12-2023",
-            listStatus = GroceryListStatus.DROPPED.toString()
+            createdAt = 0L,
+            listStatus = GroceryListStatus.DROPPED
         ),
         onItemClick = {}
     )
