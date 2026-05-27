@@ -1,10 +1,10 @@
 package com.pwojtowicz.buybuddies.di
 
 import android.content.Context
+import com.pwojtowicz.buybuddies.BuildConfig
 import com.pwojtowicz.buybuddies.auth.AuthorizationClient
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
-import com.pwojtowicz.buybuddies.R
 import com.pwojtowicz.buybuddies.auth.GuestModeManager
 import com.pwojtowicz.buybuddies.auth.TokenInterceptor
 import com.pwojtowicz.buybuddies.data.api.AuthApiService
@@ -28,9 +28,7 @@ import javax.inject.Singleton
 object NetworkModule {
     @Provides
     @Singleton
-    fun provideBaseUrl(@ApplicationContext context: Context): String {
-        return context.getString(R.string.shiro_backend_ip)
-    }
+    fun provideBaseUrl(): String = BuildConfig.BASE_URL
 
     @Provides
     @Singleton
@@ -43,7 +41,7 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideLoggingInterceptor() = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = HttpLoggingInterceptor.Level.BASIC
     }
 
     @Provides
