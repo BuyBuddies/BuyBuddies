@@ -1,13 +1,13 @@
 package com.pwojtowicz.buybuddies.data.dto
 
 data class GroceryListDTO(
-    val id: Long = 0,
+    val id: String = "",
     val name: String,
     val description: String = "",
     val ownerId: String?,
-    val homeId: Long?,
+    val homeId: String?,
     val status: String,
     val memberIds: Set<String> = emptySet(),
-    override val updatedAt: Long,
-    override val createdAt: String
+    override val updatedAt: String?,
+    override val createdAt: String?
 ) : BaseDto

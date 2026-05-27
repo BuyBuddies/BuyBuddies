@@ -1,12 +1,10 @@
 package com.pwojtowicz.buybuddies.data.dto
 
 data class DepotDTO(
-    val id: Long,
+    val id: String = "",
     val name: String,
     val description: String?,
-    val homeId: Long,
-    override val updatedAt: Long,
-    override val createdAt: String
-) : BaseDto {
-
-}
+    val homeId: String,
+    override val updatedAt: String?,
+    override val createdAt: String?
+) : BaseDto
